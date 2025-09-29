@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка заказов - Верификация данных</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'main/css/sargyt_check.css' %}">
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'main:home' %}" class="back-btn">← Вернуться на главную</a>
+        
+        <div class="header">
+            <h1>Проверка заказов</h1>
+            <p>Проверка и подтверждение данных заказов</p>
+        </div>
+
+        <div class="main-selection-container">
+            <div class="selection-row">
+                <div class="selection-group">
+                    <label for="user-select">Выберите пользователя:</label>
+                    <div class="searchable-select">
+                        <input type="text" 
+                               id="user-select" 
+                               class="select-input" 
+                               placeholder="Начните вводить имя пользователя..." 
+                               autocomplete="off">
+                        <div id="user-dropdown" class="dropdown-list"></div>
+                    </div>
+                </div>
+                
+                <div class="selection-group">
+                    <label for="user-region">Регион пользователя:</label>
+                    <input type="text" 
+                           id="user-region" 
+                           class="region-display" 
+                           placeholder="Регион будет выбран автоматически" 
+                           readonly>
+                </div>
+            </div>
+
+            <div class="categories-section">
+                <div class="categories-title">Категории проверки</div>
+                <div class="categories-grid">
+                    <div class="category-block">
+                        <div class="category-name">Zebra</div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-name">Multi stor</div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-name">Rol stor</div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-name">Agac</div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-name">Plise</div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-name">Setka</div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-name">Rim stor</div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-name">Demir zalyuz</div>
+                    </div>
+                </div>
+                
+                <div class="karniz-section">
+                    <div class="selection-group">
+                        <label for="karniz-gornus">Karniz gornus:</label>
+                        <select id="karniz-gornus" class="select-field">
+                            <option value="">Выберите опцию...</option>
+                            <option value="option1">Опция 1</option>
+                            <option value="option2">Опция 2</option>
+                            <option value="option3">Опция 3</option>
+                            <option value="option4">Опция 4</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <div class="content-area">
+                <p>Выберите пользователя и заполните категории для проверки заказа.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample user data with regions
+        const users = [
+            { id: 1, name: 'Иванов Иван Иванович', region: 'Ашхабад' },
+            { id: 2, name: 'Петров Петр Петрович', region: 'Ахал' },
+            { id: 3, name: 'Сидоров Сидор Сидорович', region: 'Балкан' },
+            { id: 4, name: 'Козлов Козел Козлович', region: 'Дашогуз' },
+            { id: 5, name: 'Медведев Медведь Медведевич', region: 'Лебап' },
+            { id: 6, name: 'Волков Волк Волкович', region: 'Мары' },
+            { id: 7, name: 'Лисицын Лис Лисович', region: 'Ашхабад' },
+            { id: 8, name: 'Зайцев Заяц Зайцевич', region: 'Ахал' },
+            { id: 9, name: 'Орлов Орел Орлович', region: 'Балкан' },
+            { id: 10, name: 'Соколов Сокол Соколович', region: 'Дашогуз' },
+            { id: 11, name: 'Ястребов Ястреб Ястребович', region: 'Лебап' },
+            { id: 12, name: 'Беркутов Беркут Беркутович', region: 'Мары' }
+        ];
+
+        const userInput = document.getElementById('user-select');
+        const userDropdown = document.getElementById('user-dropdown');
+        const regionDisplay = document.getElementById('user-region');
+        let selectedUser = null;
+
+        // Filter and display users based on search
+        function filterUsers(searchTerm) {
+            const filtered = users.filter(user => 
+                user.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            displayUsers(filtered);
+        }
+
+        // Display users in dropdown
+        function displayUsers(userList) {
+            userDropdown.innerHTML = '';
+            
+            if (userList.length === 0) {
+                userDropdown.innerHTML = '<div class="dropdown-item">Пользователи не найдены</div>';
+            } else {
+                userList.forEach(user => {
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item';
+                    item.textContent = user.name;
+                    item.addEventListener('click', () => selectUser(user));
+                    userDropdown.appendChild(item);
+                });
+            }
+            
+            userDropdown.style.display = 'block';
+        }
+
+        // Select user and set region
+        function selectUser(user) {
+            selectedUser = user;
+            userInput.value = user.name;
+            regionDisplay.value = user.region;
+            regionDisplay.classList.add('filled');
+            userDropdown.style.display = 'none';
+            
+            console.log('Выбран пользователь:', user.name, 'Регион:', user.region);
+        }
+
+        // Event listeners
+        userInput.addEventListener('input', function() {
+            const searchTerm = this.value.trim();
+            
+            if (searchTerm.length > 0) {
+                filterUsers(searchTerm);
+            } else {
+                userDropdown.style.display = 'none';
+                regionDisplay.value = '';
+                regionDisplay.classList.remove('filled');
+                selectedUser = null;
+            }
+        });
+
+        userInput.addEventListener('focus', function() {
+            if (this.value.trim().length > 0) {
+                filterUsers(this.value.trim());
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.searchable-select')) {
+                userDropdown.style.display = 'none';
+            }
+        });
+
+        // Clear selection when input is manually cleared
+        userInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Backspace' || event.key === 'Delete') {
+                setTimeout(() => {
+                    if (this.value.trim() === '') {
+                        regionDisplay.value = '';
+                        regionDisplay.classList.remove('filled');
+                        selectedUser = null;
+                    }
+                }, 10);
+            }
+        });
+
+        console.log('Страница проверки заказов загружена');
+        console.log('Доступно пользователей:', users.length);
+
+        // Karniz gornus select functionality
+        const karnizSelect = document.getElementById('karniz-gornus');
+        let selectedKarnizOption = null;
+
+        karnizSelect.addEventListener('change', function() {
+            selectedKarnizOption = this.value;
+            console.log('Выбрана опция Karniz gornus:', selectedKarnizOption);
+        });
+
+        // Category selection functionality (single select)
+        const categoryBlocks = document.querySelectorAll('.category-block');
+        let selectedCategory = null;
+
+        categoryBlocks.forEach(block => {
+            block.addEventListener('click', function() {
+                const categoryName = this.querySelector('.category-name').textContent.trim();
+                
+                if (this.classList.contains('selected')) {
+                    // Deselect current category
+                    this.classList.remove('selected');
+                    selectedCategory = null;
+                } else {
+                    // Deselect all other categories first
+                    categoryBlocks.forEach(otherBlock => {
+                        otherBlock.classList.remove('selected');
+                    });
+                    
+                    // Select this category
+                    this.classList.add('selected');
+                    selectedCategory = categoryName;
+                }
+                
+                console.log('Выбранная категория:', selectedCategory);
+                updateCategoryDisplay();
+            });
+        });
+
+        // Function to update category display or perform actions
+        function updateCategoryDisplay() {
+            if (selectedCategory) {
+                console.log(`Выбрана категория: ${selectedCategory}`);
+            } else {
+                console.log('Ни одна категория не выбрана');
+            }
+            
+            // You can add additional logic here, such as:
+            // - Enabling/disabling buttons based on selection
+            // - Updating form data
+            // - Showing selected category in another part of the UI
+        }
+
+        // Optional: Add keyboard support (Space or Enter to toggle)
+        categoryBlocks.forEach(block => {
+            block.setAttribute('tabindex', '0');
+            block.addEventListener('keydown', function(event) {
+                if (event.key === ' ' || event.key === 'Enter') {
+                    event.preventDefault();
+                    this.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

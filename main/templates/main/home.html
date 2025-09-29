@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aydyn Sahra Check</title>
+    <link rel="stylesheet" href="{% static 'main/css/home.css' %}">
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1>Aydyn Sahra Check</h1>
+            <p>Добро пожаловать! Выберите нужный раздел</p>
+        </div>
+        
+        <div class="sections-container">
+            <div class="section" onclick="navigateToSection('sargyt')">
+                <h2>Проверка заказов</h2>
+                <p>Проверка и управление заказами</p>
+            </div>
+            
+            <div class="section" onclick="navigateToSection('hyzmat')">
+                <h2>Услуги</h2>
+                <p>Услуги и обслуживание</p>
+            </div>
+            
+            <div class="section" onclick="navigateToSection('sowda')">
+                <h2>Торговля</h2>
+                <p>Торговые и продажные операции</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pass Django URL to JavaScript
+        const sargytUrl = "{% url 'main:sargyt_check' %}";
+    </script>
+    <script src="{% static 'main/js/home.js' %}"></script>
+</body>
+</html>

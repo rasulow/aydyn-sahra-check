@@ -87,6 +87,67 @@
                             <option value="option4">Опция 4</option>
                         </select>
                     </div>
+                    
+                    <div class="selpe-section">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="selpe-checkbox" class="checkbox-input">
+                            <label for="selpe-checkbox" class="checkbox-label">Selpe</label>
+                        </div>
+                        
+                        <div class="selection-group selpe-select-group" id="selpe-select-group" style="display: none;">
+                            <select id="selpe-select" class="select-field">
+                                <option value="">Выберите...</option>
+                                <option value="1-gat">1 gat</option>
+                                <option value="2-gat">2 gat</option>
+                                <option value="3-gat">3 gat</option>
+                            </select>
+                        </div>
+                        
+                        <div class="radio-group-vertical">
+                            <div class="radio-item">
+                                <input type="radio" id="turk-radio" name="region-radio" value="turk" class="radio-input">
+                                <label for="turk-radio" class="radio-label">Turk</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="hytay-radio" name="region-radio" value="hytay" class="radio-input">
+                                <label for="hytay-radio" class="radio-label">Hytay</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="yewropa-radio" name="region-radio" value="yewropa" class="radio-input">
+                                <label for="yewropa-radio" class="radio-label">Yewropa</label>
+                            </div>
+                        </div>
+                        
+                        <div class="weranda-section">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="weranda-checkbox" class="checkbox-input">
+                                <label for="weranda-checkbox" class="checkbox-label">Weranda</label>
+                            </div>
+                            
+                            <div class="selection-group weranda-select-group" id="weranda-select-group" style="display: none;">
+                                <select id="weranda-select" class="select-field">
+                                    <option value="">Выберите...</option>
+                                    <option value="2-bolek">2 bolek</option>
+                                    <option value="3-bolek">3 bolek</option>
+                                    <option value="4-bolek">4 bolek</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="measurement-section">
+                    <div class="measurement-container">
+                        <div class="top-measurement">
+                            <input type="number" id="top-length" class="measurement-input horizontal" placeholder="Длина" min="0" step="0.1">
+                        </div>
+                        <div class="rectangle-with-left">
+                            <div class="left-measurement">
+                                <input type="number" id="left-length" class="measurement-input vertical" placeholder="Высота" min="0" step="0.1">
+                            </div>
+                            <div class="rectangle"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -209,6 +270,81 @@
         karnizSelect.addEventListener('change', function() {
             selectedKarnizOption = this.value;
             console.log('Выбрана опция Karniz gornus:', selectedKarnizOption);
+        });
+
+        // Selpe checkbox functionality
+        const selpeCheckbox = document.getElementById('selpe-checkbox');
+        const selpeSelectGroup = document.getElementById('selpe-select-group');
+        const selpeSelect = document.getElementById('selpe-select');
+        let selectedSelpeOption = null;
+
+        selpeCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                selpeSelectGroup.style.display = 'block';
+                console.log('Selpe checkbox включен');
+            } else {
+                selpeSelectGroup.style.display = 'none';
+                selpeSelect.value = '';
+                selectedSelpeOption = null;
+                console.log('Selpe checkbox выключен');
+            }
+        });
+
+        selpeSelect.addEventListener('change', function() {
+            selectedSelpeOption = this.value;
+            console.log('Выбрана опция Selpe:', selectedSelpeOption);
+        });
+
+        // Radio button functionality
+        const radioButtons = document.querySelectorAll('input[name="region-radio"]');
+        let selectedRegionRadio = null;
+
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    selectedRegionRadio = this.value;
+                    console.log('Выбран регион:', selectedRegionRadio);
+                }
+            });
+        });
+
+        // Weranda checkbox functionality
+        const werandaCheckbox = document.getElementById('weranda-checkbox');
+        const werandaSelectGroup = document.getElementById('weranda-select-group');
+        const werandaSelect = document.getElementById('weranda-select');
+        let selectedWerandaOption = null;
+
+        werandaCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                werandaSelectGroup.style.display = 'block';
+                console.log('Weranda checkbox включен');
+            } else {
+                werandaSelectGroup.style.display = 'none';
+                werandaSelect.value = '';
+                selectedWerandaOption = null;
+                console.log('Weranda checkbox выключен');
+            }
+        });
+
+        werandaSelect.addEventListener('change', function() {
+            selectedWerandaOption = this.value;
+            console.log('Выбрана опция Weranda:', selectedWerandaOption);
+        });
+
+        // Measurement inputs functionality
+        const topLengthInput = document.getElementById('top-length');
+        const leftLengthInput = document.getElementById('left-length');
+        let topLength = null;
+        let leftLength = null;
+
+        topLengthInput.addEventListener('input', function() {
+            topLength = parseFloat(this.value) || null;
+            console.log('Длина (верх):', topLength);
+        });
+
+        leftLengthInput.addEventListener('input', function() {
+            leftLength = parseFloat(this.value) || null;
+            console.log('Высота (лево):', leftLength);
         });
 
         // Category selection functionality (single select)

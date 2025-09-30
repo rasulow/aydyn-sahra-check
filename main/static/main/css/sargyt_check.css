@@ -452,3 +452,223 @@ textarea:focus {
         min-width: auto;
     }
 }
+
+/* Karniz section layout */
+.karniz-section {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.karniz-section .selection-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Selpe section styles */
+.selpe-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-input {
+    width: 20px;
+    height: 20px;
+    accent-color: #4facfe;
+    cursor: pointer;
+    margin-bottom: 2px;
+}
+
+.checkbox-label {
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+}
+
+.selpe-select-group {
+    min-width: 150px;
+}
+
+.selpe-select-group .select-field {
+    margin-top: 0;
+}
+
+/* Radio button group styles */
+.radio-group-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.radio-input {
+    width: 18px;
+    height: 18px;
+    accent-color: #4facfe;
+    cursor: pointer;
+}
+
+.radio-label {
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.95rem;
+}
+
+/* Weranda section styles */
+.weranda-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.weranda-select-group {
+    min-width: 150px;
+}
+
+.weranda-select-group .select-field {
+    margin-top: 0;
+}
+
+/* Measurement section styles */
+.measurement-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.measurement-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 300px;
+}
+
+.top-measurement {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.rectangle-with-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.left-measurement {
+    display: flex;
+    align-items: center;
+}
+
+.rectangle {
+    width: 200px;
+    height: 150px;
+    border-left: 2px solid #4facfe;
+    border-top: 2px solid #4facfe;
+}
+
+.measurement-input {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    background: white;
+    transition: border-color 0.3s ease;
+    width: 80px;
+    text-align: center;
+}
+
+.measurement-input:focus {
+    outline: none;
+    border-color: #4facfe;
+    box-shadow: 0 0 5px rgba(79, 172, 254, 0.3);
+}
+
+.measurement-input.horizontal {
+    width: 100px;
+}
+
+.measurement-input.vertical {
+    width: 50px;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    height: 80px;
+}
+
+@media (max-width: 768px) {
+    .karniz-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .karniz-section .selection-group {
+        min-width: auto;
+    }
+    
+    .selpe-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .selpe-select-group {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .weranda-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .weranda-select-group {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .measurement-section {
+        margin: 20px 0;
+        padding: 15px;
+    }
+    
+    .measurement-container {
+        max-width: 100%;
+    }
+    
+    .rectangle {
+        width: 150px;
+        height: 100px;
+    }
+    
+    .top-measurement {
+        margin-left: 40px;
+    }
+    
+    .measurement-input.vertical {
+        height: 60px;
+        width: 40px;
+    }
+}

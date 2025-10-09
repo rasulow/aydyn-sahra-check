@@ -132,6 +132,61 @@
                                     <option value="4-bolek">4 bolek</option>
                                 </select>
                             </div>
+                            
+                            <div class="weranda-labels-container" id="weranda-labels-container" style="display: none;">
+                                <div class="weranda-label" id="weranda-label-a" style="display: none;">
+                                    <span class="label-text">a</span>
+                                    <div class="label-inputs">
+                                        <div class="input-field-group">
+                                            <label class="input-label">Width</label>
+                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                        </div>
+                                        <div class="input-field-group">
+                                            <label class="input-label">Height</label>
+                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="weranda-label" id="weranda-label-b" style="display: none;">
+                                    <span class="label-text">b</span>
+                                    <div class="label-inputs">
+                                        <div class="input-field-group">
+                                            <label class="input-label">Width</label>
+                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                        </div>
+                                        <div class="input-field-group">
+                                            <label class="input-label">Height</label>
+                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="weranda-label" id="weranda-label-c" style="display: none;">
+                                    <span class="label-text">c</span>
+                                    <div class="label-inputs">
+                                        <div class="input-field-group">
+                                            <label class="input-label">Width</label>
+                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                        </div>
+                                        <div class="input-field-group">
+                                            <label class="input-label">Height</label>
+                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="weranda-label" id="weranda-label-d" style="display: none;">
+                                    <span class="label-text">d</span>
+                                    <div class="label-inputs">
+                                        <div class="input-field-group">
+                                            <label class="input-label">Width</label>
+                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                        </div>
+                                        <div class="input-field-group">
+                                            <label class="input-label">Height</label>
+                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -312,23 +367,67 @@
         const werandaCheckbox = document.getElementById('weranda-checkbox');
         const werandaSelectGroup = document.getElementById('weranda-select-group');
         const werandaSelect = document.getElementById('weranda-select');
+        const werandaLabelsContainer = document.getElementById('weranda-labels-container');
+        const werandaLabelA = document.getElementById('weranda-label-a');
+        const werandaLabelB = document.getElementById('weranda-label-b');
+        const werandaLabelC = document.getElementById('weranda-label-c');
+        const werandaLabelD = document.getElementById('weranda-label-d');
+        const measurementSection = document.querySelector('.measurement-section');
         let selectedWerandaOption = null;
 
         werandaCheckbox.addEventListener('change', function() {
             if (this.checked) {
                 werandaSelectGroup.style.display = 'block';
-                console.log('Weranda checkbox включен');
+                measurementSection.style.display = 'none';
+                console.log('Weranda checkbox включен - measurement section скрыт');
             } else {
                 werandaSelectGroup.style.display = 'none';
+                werandaLabelsContainer.style.display = 'none';
+                measurementSection.style.display = 'block';
                 werandaSelect.value = '';
                 selectedWerandaOption = null;
-                console.log('Weranda checkbox выключен');
+                // Hide all labels
+                werandaLabelA.style.display = 'none';
+                werandaLabelB.style.display = 'none';
+                werandaLabelC.style.display = 'none';
+                werandaLabelD.style.display = 'none';
+                console.log('Weranda checkbox выключен - measurement section показан');
             }
         });
 
         werandaSelect.addEventListener('change', function() {
             selectedWerandaOption = this.value;
             console.log('Выбрана опция Weranda:', selectedWerandaOption);
+            
+            // Hide all labels first
+            werandaLabelA.style.display = 'none';
+            werandaLabelB.style.display = 'none';
+            werandaLabelC.style.display = 'none';
+            werandaLabelD.style.display = 'none';
+            
+            // Show labels based on selected option
+            if (selectedWerandaOption === '2-bolek') {
+                werandaLabelsContainer.style.display = 'flex';
+                werandaLabelA.style.display = 'flex';
+                werandaLabelB.style.display = 'flex';
+                console.log('Показаны метки: a, b');
+            } else if (selectedWerandaOption === '3-bolek') {
+                werandaLabelsContainer.style.display = 'flex';
+                werandaLabelA.style.display = 'flex';
+                werandaLabelB.style.display = 'flex';
+                werandaLabelC.style.display = 'flex';
+                console.log('Показаны метки: a, b, c');
+            } else if (selectedWerandaOption === '4-bolek') {
+                werandaLabelsContainer.style.display = 'flex';
+                werandaLabelA.style.display = 'flex';
+                werandaLabelB.style.display = 'flex';
+                werandaLabelC.style.display = 'flex';
+                werandaLabelD.style.display = 'flex';
+                console.log('Показаны метки: a, b, c, d');
+            } else {
+                werandaLabelsContainer.style.display = 'none';
+                console.log('Метки скрыты');
+            }
         });
 
         // Measurement inputs functionality

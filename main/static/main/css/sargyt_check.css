@@ -547,6 +547,77 @@ textarea:focus {
     margin-top: 0;
 }
 
+/* Weranda labels container */
+.weranda-labels-container {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+}
+
+.weranda-label {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #4facfe;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.label-text {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #4facfe;
+    min-width: 25px;
+    text-align: center;
+}
+
+.label-inputs {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.input-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.input-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.label-input {
+    width: 80px;
+    padding: 8px 10px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    background: white;
+    transition: border-color 0.3s ease;
+    text-align: center;
+}
+
+.label-input:focus {
+    outline: none;
+    border-color: #4facfe;
+    box-shadow: 0 0 5px rgba(79, 172, 254, 0.3);
+}
+
 /* Measurement section styles */
 .measurement-section {
     margin-top: 30px;
@@ -647,6 +718,34 @@ textarea:focus {
     .weranda-select-group {
         width: 100%;
         min-width: auto;
+    }
+    
+    .weranda-labels-container {
+        width: 100%;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .weranda-label {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .label-inputs {
+        width: 100%;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .input-field-group {
+        width: 100%;
+    }
+    
+    .label-input {
+        width: 100%;
     }
     
     .measurement-section {

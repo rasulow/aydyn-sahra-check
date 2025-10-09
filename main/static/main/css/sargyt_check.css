@@ -123,7 +123,6 @@ textarea:focus {
     display: flex;
     gap: 20px;
     align-items: center;
-    margin-top: 10px;
 }
 
 .checkbox-item {
@@ -199,12 +198,124 @@ textarea:focus {
     font-size: 1.2rem;
 }
 
+/* Bottom buttons */
+.bottom-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #e0e0e0;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.add-btn {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+.download-btn {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.btn-icon {
+    font-size: 1.3rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.btn-text {
+    font-size: 0.95rem;
+}
+
 .main-selection-container {
     background: white;
     border-radius: 10px;
     padding: 25px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
+}
+
+/* Order entry styles */
+#entries-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.order-entry {
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 20px;
+    background: #fafafa;
+}
+
+.entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.entry-title {
+    color: #333;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.entry-number {
+    color: #4facfe;
+}
+
+.remove-entry-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.remove-entry-btn:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 4px 12px rgba(238, 90, 111, 0.4);
+}
+
+.remove-entry-btn:active {
+    transform: scale(0.95);
 }
 
 .selection-row {
@@ -232,6 +343,9 @@ textarea:focus {
 
 .categories-section {
     margin-top: 0;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
 }
 
 .searchable-select {
@@ -343,9 +457,10 @@ textarea:focus {
 
 .categories-grid {
     display: flex;
-    gap: 15px;
+    gap: 10px;
     justify-content: space-between;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
 }
 
 .category-block {
@@ -356,14 +471,16 @@ textarea:focus {
     text-align: center;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    flex: 1;
-    min-width: 120px;
+    flex: 1 1 0;
+    min-width: 100px;
+    max-width: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 80px;
     cursor: pointer;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .category-block:hover {
@@ -391,10 +508,10 @@ textarea:focus {
 .category-name {
     font-weight: 600;
     color: #333;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 20px 10px;
+    letter-spacing: 0.3px;
+    padding: 15px 8px;
     width: 100%;
     height: 100%;
     display: flex;
@@ -438,6 +555,11 @@ textarea:focus {
     .category-block {
         min-width: 100px;
         flex: 1 1 calc(25% - 10px);
+    }
+    
+    .bottom-buttons {
+        justify-content: center;
+        flex-wrap: wrap;
     }
 }
 

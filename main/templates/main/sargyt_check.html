@@ -40,8 +40,15 @@
                 </div>
             </div>
 
-            <div class="categories-section">
-                <div class="categories-title">Категории проверки</div>
+            <div id="entries-container">
+                <div class="order-entry" data-entry-number="1">
+                    <div class="entry-header">
+                        <h3 class="entry-title">Заказ #<span class="entry-number">1</span></h3>
+                        <button class="remove-entry-btn" style="display: none;">✕</button>
+                    </div>
+                    
+                    <div class="categories-section">
+                        <div class="categories-title">Категории проверки</div>
                 <div class="categories-grid">
                     <div class="category-block">
                         <div class="category-name">Zebra</div>
@@ -88,103 +95,99 @@
                         </select>
                     </div>
                     
-                    <div class="selpe-section">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="selpe-checkbox" class="checkbox-input">
-                            <label for="selpe-checkbox" class="checkbox-label">Selpe</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="selpe-checkbox" class="checkbox-input">
+                        <label for="selpe-checkbox" class="checkbox-label">Selpe</label>
+                    </div>
+                    
+                    <div class="selection-group selpe-select-group" id="selpe-select-group" style="display: none;">
+                        <select id="selpe-select" class="select-field">
+                            <option value="">Выберите...</option>
+                            <option value="1-gat">1 gat</option>
+                            <option value="2-gat">2 gat</option>
+                            <option value="3-gat">3 gat</option>
+                        </select>
+                    </div>
+                    
+                    <div class="radio-group-vertical">
+                        <div class="radio-item">
+                            <input type="radio" id="turk-radio" name="region-radio" value="turk" class="radio-input">
+                            <label for="turk-radio" class="radio-label">Turk</label>
                         </div>
-                        
-                        <div class="selection-group selpe-select-group" id="selpe-select-group" style="display: none;">
-                            <select id="selpe-select" class="select-field">
-                                <option value="">Выберите...</option>
-                                <option value="1-gat">1 gat</option>
-                                <option value="2-gat">2 gat</option>
-                                <option value="3-gat">3 gat</option>
-                            </select>
+                        <div class="radio-item">
+                            <input type="radio" id="hytay-radio" name="region-radio" value="hytay" class="radio-input">
+                            <label for="hytay-radio" class="radio-label">Hytay</label>
                         </div>
-                        
-                        <div class="radio-group-vertical">
-                            <div class="radio-item">
-                                <input type="radio" id="turk-radio" name="region-radio" value="turk" class="radio-input">
-                                <label for="turk-radio" class="radio-label">Turk</label>
-                            </div>
-                            <div class="radio-item">
-                                <input type="radio" id="hytay-radio" name="region-radio" value="hytay" class="radio-input">
-                                <label for="hytay-radio" class="radio-label">Hytay</label>
-                            </div>
-                            <div class="radio-item">
-                                <input type="radio" id="yewropa-radio" name="region-radio" value="yewropa" class="radio-input">
-                                <label for="yewropa-radio" class="radio-label">Yewropa</label>
+                        <div class="radio-item">
+                            <input type="radio" id="yewropa-radio" name="region-radio" value="yewropa" class="radio-input">
+                            <label for="yewropa-radio" class="radio-label">Yewropa</label>
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="weranda-checkbox" class="checkbox-input">
+                        <label for="weranda-checkbox" class="checkbox-label">Weranda</label>
+                    </div>
+                    
+                    <div class="selection-group weranda-select-group" id="weranda-select-group" style="display: none;">
+                        <select id="weranda-select" class="select-field">
+                            <option value="">Выберите...</option>
+                            <option value="2-bolek">2 bolek</option>
+                            <option value="3-bolek">3 bolek</option>
+                            <option value="4-bolek">4 bolek</option>
+                        </select>
+                    </div>
+                    
+                    <div class="weranda-labels-container" id="weranda-labels-container" style="display: none;">
+                        <div class="weranda-label" id="weranda-label-a" style="display: none;">
+                            <span class="label-text">a</span>
+                            <div class="label-inputs">
+                                <div class="input-field-group">
+                                    <label class="input-label">Width</label>
+                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                </div>
+                                <div class="input-field-group">
+                                    <label class="input-label">Height</label>
+                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="weranda-section">
-                            <div class="checkbox-group">
-                                <input type="checkbox" id="weranda-checkbox" class="checkbox-input">
-                                <label for="weranda-checkbox" class="checkbox-label">Weranda</label>
+                        <div class="weranda-label" id="weranda-label-b" style="display: none;">
+                            <span class="label-text">b</span>
+                            <div class="label-inputs">
+                                <div class="input-field-group">
+                                    <label class="input-label">Width</label>
+                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                </div>
+                                <div class="input-field-group">
+                                    <label class="input-label">Height</label>
+                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                </div>
                             </div>
-                            
-                            <div class="selection-group weranda-select-group" id="weranda-select-group" style="display: none;">
-                                <select id="weranda-select" class="select-field">
-                                    <option value="">Выберите...</option>
-                                    <option value="2-bolek">2 bolek</option>
-                                    <option value="3-bolek">3 bolek</option>
-                                    <option value="4-bolek">4 bolek</option>
-                                </select>
+                        </div>
+                        <div class="weranda-label" id="weranda-label-c" style="display: none;">
+                            <span class="label-text">c</span>
+                            <div class="label-inputs">
+                                <div class="input-field-group">
+                                    <label class="input-label">Width</label>
+                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                </div>
+                                <div class="input-field-group">
+                                    <label class="input-label">Height</label>
+                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                                </div>
                             </div>
-                            
-                            <div class="weranda-labels-container" id="weranda-labels-container" style="display: none;">
-                                <div class="weranda-label" id="weranda-label-a" style="display: none;">
-                                    <span class="label-text">a</span>
-                                    <div class="label-inputs">
-                                        <div class="input-field-group">
-                                            <label class="input-label">Width</label>
-                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                        </div>
-                                        <div class="input-field-group">
-                                            <label class="input-label">Height</label>
-                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                        </div>
-                                    </div>
+                        </div>
+                        <div class="weranda-label" id="weranda-label-d" style="display: none;">
+                            <span class="label-text">d</span>
+                            <div class="label-inputs">
+                                <div class="input-field-group">
+                                    <label class="input-label">Width</label>
+                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
                                 </div>
-                                <div class="weranda-label" id="weranda-label-b" style="display: none;">
-                                    <span class="label-text">b</span>
-                                    <div class="label-inputs">
-                                        <div class="input-field-group">
-                                            <label class="input-label">Width</label>
-                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                        </div>
-                                        <div class="input-field-group">
-                                            <label class="input-label">Height</label>
-                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="weranda-label" id="weranda-label-c" style="display: none;">
-                                    <span class="label-text">c</span>
-                                    <div class="label-inputs">
-                                        <div class="input-field-group">
-                                            <label class="input-label">Width</label>
-                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                        </div>
-                                        <div class="input-field-group">
-                                            <label class="input-label">Height</label>
-                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="weranda-label" id="weranda-label-d" style="display: none;">
-                                    <span class="label-text">d</span>
-                                    <div class="label-inputs">
-                                        <div class="input-field-group">
-                                            <label class="input-label">Width</label>
-                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                        </div>
-                                        <div class="input-field-group">
-                                            <label class="input-label">Height</label>
-                                            <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                        </div>
-                                    </div>
+                                <div class="input-field-group">
+                                    <label class="input-label">Height</label>
+                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
                                 </div>
                             </div>
                         </div>
@@ -203,14 +206,20 @@
                             <div class="rectangle"></div>
                         </div>
                     </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="form-container">
-            <div class="content-area">
-                <p>Выберите пользователя и заполните категории для проверки заказа.</p>
-            </div>
+        <div class="bottom-buttons">
+            <button class="action-btn add-btn" id="add-btn">
+                <span class="btn-icon">+</span>
+                <span class="btn-text">Добавить</span>
+            </button>
+            <button class="action-btn download-btn" id="download-btn">
+                <span class="btn-icon">↓</span>
+                <span class="btn-text">Скачать</span>
+            </button>
         </div>
     </div>
 
@@ -498,6 +507,194 @@
                 }
             });
         });
+
+        // Add new order entry functionality
+        let entryCounter = 1;
+        const addBtn = document.getElementById('add-btn');
+        const entriesContainer = document.getElementById('entries-container');
+
+        addBtn.addEventListener('click', function() {
+            entryCounter++;
+            
+            // Clone the first entry
+            const firstEntry = document.querySelector('.order-entry');
+            const newEntry = firstEntry.cloneNode(true);
+            
+            // Update entry number
+            newEntry.setAttribute('data-entry-number', entryCounter);
+            newEntry.querySelector('.entry-number').textContent = entryCounter;
+            
+            // Show remove button
+            const removeBtn = newEntry.querySelector('.remove-entry-btn');
+            removeBtn.style.display = 'inline-block';
+            
+            // Clear all input values
+            newEntry.querySelectorAll('input[type="number"]').forEach(input => {
+                input.value = '';
+            });
+            
+            // Reset checkboxes
+            newEntry.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Reset radio buttons
+            newEntry.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.checked = false;
+                radio.name = 'region-radio-' + entryCounter; // Make radio groups unique per entry
+            });
+            
+            // Reset select fields
+            newEntry.querySelectorAll('select').forEach(select => {
+                select.selectedIndex = 0;
+            });
+            
+            // Hide conditional sections
+            newEntry.querySelector('.selpe-select-group').style.display = 'none';
+            newEntry.querySelector('.weranda-select-group').style.display = 'none';
+            newEntry.querySelector('.weranda-labels-container').style.display = 'none';
+            newEntry.querySelectorAll('.weranda-label').forEach(label => {
+                label.style.display = 'none';
+            });
+            
+            // Remove selected class from categories
+            newEntry.querySelectorAll('.category-block').forEach(block => {
+                block.classList.remove('selected');
+            });
+            
+            // Update IDs to be unique
+            updateEntryIds(newEntry, entryCounter);
+            
+            // Append to container
+            entriesContainer.appendChild(newEntry);
+            
+            // Reinitialize event listeners for the new entry
+            initializeEntryEventListeners(newEntry, entryCounter);
+            
+            // Show all remove buttons if there's more than one entry
+            updateRemoveButtons();
+            
+            console.log('Добавлен новый заказ #' + entryCounter);
+        });
+
+        // Function to update IDs in cloned entry
+        function updateEntryIds(entry, number) {
+            const elementsWithId = entry.querySelectorAll('[id]');
+            elementsWithId.forEach(element => {
+                const oldId = element.id;
+                element.id = oldId + '-' + number;
+            });
+            
+            // Update for attributes in labels
+            const labels = entry.querySelectorAll('label[for]');
+            labels.forEach(label => {
+                const oldFor = label.getAttribute('for');
+                label.setAttribute('for', oldFor + '-' + number);
+            });
+        }
+
+        // Function to initialize event listeners for a new entry
+        function initializeEntryEventListeners(entry, entryNumber) {
+            // Selpe checkbox
+            const selpeCheckbox = entry.querySelector('[id^="selpe-checkbox"]');
+            const selpeSelectGroup = entry.querySelector('.selpe-select-group');
+            const selpeSelect = entry.querySelector('[id^="selpe-select"]');
+            
+            selpeCheckbox.addEventListener('change', function() {
+                selpeSelectGroup.style.display = this.checked ? 'block' : 'none';
+                if (!this.checked) {
+                    selpeSelect.value = '';
+                }
+            });
+            
+            // Weranda checkbox
+            const werandaCheckbox = entry.querySelector('[id^="weranda-checkbox"]');
+            const werandaSelectGroup = entry.querySelector('.weranda-select-group');
+            const werandaSelect = entry.querySelector('[id^="weranda-select"]');
+            const werandaLabelsContainer = entry.querySelector('.weranda-labels-container');
+            const measurementSection = entry.querySelector('.measurement-section');
+            
+            werandaCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    werandaSelectGroup.style.display = 'block';
+                    measurementSection.style.display = 'none';
+                } else {
+                    werandaSelectGroup.style.display = 'none';
+                    werandaLabelsContainer.style.display = 'none';
+                    measurementSection.style.display = 'block';
+                    werandaSelect.value = '';
+                    entry.querySelectorAll('.weranda-label').forEach(label => {
+                        label.style.display = 'none';
+                    });
+                }
+            });
+            
+            // Weranda select
+            werandaSelect.addEventListener('change', function() {
+                const labels = {
+                    'a': entry.querySelector('[id^="weranda-label-a"]'),
+                    'b': entry.querySelector('[id^="weranda-label-b"]'),
+                    'c': entry.querySelector('[id^="weranda-label-c"]'),
+                    'd': entry.querySelector('[id^="weranda-label-d"]')
+                };
+                
+                // Hide all labels first
+                Object.values(labels).forEach(label => label.style.display = 'none');
+                
+                if (this.value === '2-bolek') {
+                    werandaLabelsContainer.style.display = 'flex';
+                    labels.a.style.display = 'flex';
+                    labels.b.style.display = 'flex';
+                } else if (this.value === '3-bolek') {
+                    werandaLabelsContainer.style.display = 'flex';
+                    labels.a.style.display = 'flex';
+                    labels.b.style.display = 'flex';
+                    labels.c.style.display = 'flex';
+                } else if (this.value === '4-bolek') {
+                    werandaLabelsContainer.style.display = 'flex';
+                    labels.a.style.display = 'flex';
+                    labels.b.style.display = 'flex';
+                    labels.c.style.display = 'flex';
+                    labels.d.style.display = 'flex';
+                } else {
+                    werandaLabelsContainer.style.display = 'none';
+                }
+            });
+            
+            // Category blocks
+            const categoryBlocks = entry.querySelectorAll('.category-block');
+            categoryBlocks.forEach(block => {
+                block.addEventListener('click', function() {
+                    if (this.classList.contains('selected')) {
+                        this.classList.remove('selected');
+                    } else {
+                        entry.querySelectorAll('.category-block').forEach(b => b.classList.remove('selected'));
+                        this.classList.add('selected');
+                    }
+                });
+            });
+            
+            // Remove button
+            const removeBtn = entry.querySelector('.remove-entry-btn');
+            removeBtn.addEventListener('click', function() {
+                entry.remove();
+                updateRemoveButtons();
+                console.log('Заказ удален');
+            });
+        }
+
+        // Function to update visibility of remove buttons
+        function updateRemoveButtons() {
+            const entries = document.querySelectorAll('.order-entry');
+            entries.forEach((entry, index) => {
+                const removeBtn = entry.querySelector('.remove-entry-btn');
+                if (entries.length > 1) {
+                    removeBtn.style.display = 'inline-block';
+                } else {
+                    removeBtn.style.display = 'none';
+                }
+            });
+        }
     </script>
 </body>
 </html>

@@ -922,6 +922,172 @@
                 }
             });
         }
+
+        // Download button functionality
+        const downloadBtn = document.getElementById('download-btn');
+        downloadBtn.addEventListener('click', async function() {
+            // Check if a user is selected
+            if (!selectedUser) {
+                alert('Пожалуйста, выберите пользователя перед скачиванием PDF');
+                return;
+            }
+
+            // Collect all orders data
+            const orders = [];
+            const entries = document.querySelectorAll('.order-entry');
+            
+            entries.forEach((entry, index) => {
+                const orderData = {};
+                const entryNumber = entry.getAttribute('data-entry-number') || (index + 1);
+                
+                // Get selected category
+                const selectedCategoryBlock = entry.querySelector('.category-block.selected');
+                if (selectedCategoryBlock) {
+                    orderData.category = selectedCategoryBlock.querySelector('.category-name').textContent.trim();
+                }
+                
+                // Get karniz gornus
+                const karnizSelect = entry.querySelector('[id^="karniz-gornus"]');
+                if (karnizSelect && karnizSelect.value) {
+                    orderData.karniz_gornus = karnizSelect.value;
+                }
+                
+                // Get selpe
+                const selpeCheckbox = entry.querySelector('[id^="selpe-checkbox"]');
+                if (selpeCheckbox && selpeCheckbox.checked) {
+                    const selpeSelect = entry.querySelector('[id^="selpe-select"]');
+                    if (selpeSelect && selpeSelect.value) {
+                        orderData.selpe = selpeSelect.value;
+                    }
+                }
+                
+                // Get region radio
+                const selectedRadio = entry.querySelector('input[name^="region-radio"]:checked');
+                if (selectedRadio) {
+                    orderData.region_radio = selectedRadio.value;
+                }
+                
+                // Get weranda data
+                const werandaCheckbox = entry.querySelector('[id^="weranda-checkbox"]');
+                if (werandaCheckbox && werandaCheckbox.checked) {
+                    const werandaSelect = entry.querySelector('[id^="weranda-select"]');
+                    if (werandaSelect && werandaSelect.value) {
+                        orderData.weranda = werandaSelect.value;
+                        
+                        // Get weranda measurements
+                        const werandaMeasurements = [];
+                        const visibleLabels = entry.querySelectorAll('.weranda-label[style*="display: flex"]');
+                        visibleLabels.forEach(label => {
+                            const labelText = label.querySelector('.label-text').textContent;
+                            const inputs = label.querySelectorAll('.label-input');
+                            if (inputs.length >= 2) {
+                                werandaMeasurements.push({
+                                    label: labelText,
+                                    width: inputs[0].value || '0',
+                                    height: inputs[1].value || '0'
+                                });
+                            }
+                        });
+                        if (werandaMeasurements.length > 0) {
+                            orderData.weranda_measurements = werandaMeasurements;
+                        }
+                    }
+                } else {
+                    // Get standard measurements if weranda is not selected
+                    const topLength = entry.querySelector('[id^="top-length"]');
+                    const leftLength = entry.querySelector('[id^="left-length"]');
+                    
+                    if ((topLength && topLength.value) || (leftLength && leftLength.value)) {
+                        orderData.measurements = {
+                            top_length: topLength ? topLength.value : '',
+                            left_length: leftLength ? leftLength.value : ''
+                        };
+                    }
+                }
+                
+                // Get kod renk (color codes)
+                const kodRenkInputs = entry.querySelectorAll('[id*="kod-renk-select"]');
+                const kodRenkValues = [];
+                kodRenkInputs.forEach(input => {
+                    // Skip dropdown elements
+                    if (!input.id.includes('dropdown') && input.value && input.value.trim()) {
+                        kodRenkValues.push(input.value.trim());
+                    }
+                });
+                if (kodRenkValues.length > 0) {
+                    orderData.kod_renk = kodRenkValues;
+                }
+                
+                // Only add order if it has some data
+                if (Object.keys(orderData).length > 0) {
+                    orders.push(orderData);
+                }
+            });
+            
+            if (orders.length === 0) {
+                alert('Нет данных для скачивания. Пожалуйста, заполните хотя бы один заказ.');
+                return;
+            }
+            
+            // Prepare the data to send
+            const dataToSend = {
+                client_name: selectedUser.name,
+                client_region: selectedUser.region,
+                orders: orders
+            };
+            
+            console.log('Отправка данных на сервер:', dataToSend);
+            
+            try {
+                // Send data to backend
+                const response = await fetch('{% url "main:download_orders_pdf" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dataToSend)
+                });
+                
+                // Check if response is an error
+                if (!response.ok) {
+                    // Try to parse error message from JSON
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Ошибка при генерации PDF');
+                    } else {
+                        throw new Error('Ошибка при генерации PDF');
+                    }
+                }
+                
+                // Get the PDF blob
+                const blob = await response.blob();
+                
+                // Check if blob is actually a PDF
+                if (blob.type === 'application/json') {
+                    // Server returned JSON error instead of PDF
+                    const text = await blob.text();
+                    const errorData = JSON.parse(text);
+                    throw new Error(errorData.error || 'Неизвестная ошибка');
+                }
+                
+                // Create a download link and trigger it
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `sargyt_orders_${new Date().getTime()}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                console.log('PDF успешно загружен');
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка: ' + error.message + '\n\nПроверьте консоль для деталей.');
+            }
+        });
     </script>
 </body>
 </html>

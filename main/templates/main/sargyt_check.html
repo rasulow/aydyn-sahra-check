@@ -139,6 +139,7 @@
                     </div>
                     
                     <div class="weranda-labels-container" id="weranda-labels-container" style="display: none;">
+                        <div class="weranda-selection-title" id="weranda-selection-title"></div>
                         <div class="weranda-label" id="weranda-label-a" style="display: none;">
                             <span class="label-text">a</span>
                             <div class="label-inputs">
@@ -191,19 +192,65 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="kod-renk-section" id="kod-renk-section">
+                            <label class="kod-renk-label">Kod renk:</label>
+                            <div class="kod-renk-selects-container">
+                                <div class="searchable-select kod-renk-select-wrapper">
+                                    <input type="text" 
+                                           id="kod-renk-select-1" 
+                                           class="select-input" 
+                                           placeholder="Начните вводить код цвета..." 
+                                           autocomplete="off">
+                                    <div id="kod-renk-dropdown-1" class="dropdown-list"></div>
+                                </div>
+                                <div class="searchable-select kod-renk-select-wrapper" id="kod-renk-select-2-wrapper" style="display: none;">
+                                    <input type="text" 
+                                           id="kod-renk-select-2" 
+                                           class="select-input" 
+                                           placeholder="Начните вводить код цвета 2..." 
+                                           autocomplete="off">
+                                    <div id="kod-renk-dropdown-2" class="dropdown-list"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="measurement-section">
                     <div class="measurement-container">
-                        <div class="top-measurement">
-                            <input type="number" id="top-length" class="measurement-input horizontal" placeholder="Длина" min="0" step="0.1">
-                        </div>
-                        <div class="rectangle-with-left">
-                            <div class="left-measurement">
-                                <input type="number" id="left-length" class="measurement-input vertical" placeholder="Высота" min="0" step="0.1">
+                        <div class="rectangle-wrapper">
+                            <div class="top-measurement">
+                                <input type="number" id="top-length" class="measurement-input horizontal" placeholder="Длина" min="0" step="0.1">
                             </div>
-                            <div class="rectangle"></div>
+                            <div class="rectangle-with-left">
+                                <div class="left-measurement">
+                                    <input type="number" id="left-length" class="measurement-input vertical" placeholder="Высота" min="0" step="0.1">
+                                </div>
+                                <div class="rectangle"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="kod-renk-section measurement-kod-renk" id="measurement-kod-renk-section">
+                            <label class="kod-renk-label">Kod renk:</label>
+                            <div class="kod-renk-selects-container">
+                                <div class="searchable-select kod-renk-select-wrapper">
+                                    <input type="text" 
+                                           id="measurement-kod-renk-select-1" 
+                                           class="select-input" 
+                                           placeholder="Начните вводить код цвета..." 
+                                           autocomplete="off">
+                                    <div id="measurement-kod-renk-dropdown-1" class="dropdown-list"></div>
+                                </div>
+                                <div class="searchable-select kod-renk-select-wrapper" id="measurement-kod-renk-select-2-wrapper" style="display: none;">
+                                    <input type="text" 
+                                           id="measurement-kod-renk-select-2" 
+                                           class="select-input" 
+                                           placeholder="Начните вводить код цвета 2..." 
+                                           autocomplete="off">
+                                    <div id="measurement-kod-renk-dropdown-2" class="dropdown-list"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     </div>
@@ -243,7 +290,23 @@
         const userInput = document.getElementById('user-select');
         const userDropdown = document.getElementById('user-dropdown');
         const regionDisplay = document.getElementById('user-region');
+        const kodRenkInput1 = document.getElementById('kod-renk-select-1');
+        const kodRenkDropdown1 = document.getElementById('kod-renk-dropdown-1');
+        const kodRenkInput2 = document.getElementById('kod-renk-select-2');
+        const kodRenkDropdown2 = document.getElementById('kod-renk-dropdown-2');
+        const kodRenkSelect2Wrapper = document.getElementById('kod-renk-select-2-wrapper');
+        
+        const measurementKodRenkInput1 = document.getElementById('measurement-kod-renk-select-1');
+        const measurementKodRenkDropdown1 = document.getElementById('measurement-kod-renk-dropdown-1');
+        const measurementKodRenkInput2 = document.getElementById('measurement-kod-renk-select-2');
+        const measurementKodRenkDropdown2 = document.getElementById('measurement-kod-renk-dropdown-2');
+        const measurementKodRenkSelect2Wrapper = document.getElementById('measurement-kod-renk-select-2-wrapper');
+        
         let selectedUser = null;
+        let selectedKodRenk1 = null;
+        let selectedKodRenk2 = null;
+        let selectedMeasurementKodRenk1 = null;
+        let selectedMeasurementKodRenk2 = null;
 
         // Filter and display users based on search
         function filterUsers(searchTerm) {
@@ -306,8 +369,30 @@
 
         // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
-            if (!event.target.closest('.searchable-select')) {
+            const searchableSelect = event.target.closest('.searchable-select');
+            if (!searchableSelect) {
                 userDropdown.style.display = 'none';
+                kodRenkDropdown1.style.display = 'none';
+                kodRenkDropdown2.style.display = 'none';
+                measurementKodRenkDropdown1.style.display = 'none';
+                measurementKodRenkDropdown2.style.display = 'none';
+            } else {
+                // Close the dropdown that's not being interacted with
+                if (!searchableSelect.contains(userInput)) {
+                    userDropdown.style.display = 'none';
+                }
+                if (!searchableSelect.contains(kodRenkInput1)) {
+                    kodRenkDropdown1.style.display = 'none';
+                }
+                if (!searchableSelect.contains(kodRenkInput2)) {
+                    kodRenkDropdown2.style.display = 'none';
+                }
+                if (!searchableSelect.contains(measurementKodRenkInput1)) {
+                    measurementKodRenkDropdown1.style.display = 'none';
+                }
+                if (!searchableSelect.contains(measurementKodRenkInput2)) {
+                    measurementKodRenkDropdown2.style.display = 'none';
+                }
             }
         });
 
@@ -326,6 +411,100 @@
 
         console.log('Страница проверки заказов загружена');
         console.log('Доступно пользователей:', users.length);
+
+        // Kod renk (color codes) data
+        const kodRenks = [
+            { id: 1, code: 'KR-001', name: 'Белый' },
+            { id: 2, code: 'KR-002', name: 'Черный' },
+            { id: 3, code: 'KR-003', name: 'Серый' },
+            { id: 4, code: 'KR-004', name: 'Бежевый' },
+            { id: 5, code: 'KR-005', name: 'Коричневый' },
+            { id: 6, code: 'KR-006', name: 'Синий' },
+            { id: 7, code: 'KR-007', name: 'Зеленый' },
+            { id: 8, code: 'KR-008', name: 'Красный' },
+            { id: 9, code: 'KR-009', name: 'Желтый' },
+            { id: 10, code: 'KR-010', name: 'Оранжевый' }
+        ];
+
+        // Helper function to setup kod renk select
+        function setupKodRenkSelect(input, dropdown, selectCallback) {
+            function filterKodRenks(searchTerm) {
+                const filtered = kodRenks.filter(kr => 
+                    kr.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    kr.name.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                
+                displayKodRenks(filtered);
+            }
+
+            function displayKodRenks(kodRenkList) {
+                dropdown.innerHTML = '';
+                
+                if (kodRenkList.length === 0) {
+                    dropdown.innerHTML = '<div class="dropdown-item">Коды не найдены</div>';
+                } else {
+                    kodRenkList.forEach(kr => {
+                        const item = document.createElement('div');
+                        item.className = 'dropdown-item';
+                        item.textContent = kr.code + ' - ' + kr.name;
+                        item.addEventListener('click', () => {
+                            input.value = kr.code + ' - ' + kr.name;
+                            dropdown.style.display = 'none';
+                            selectCallback(kr);
+                            console.log('Выбран код цвета:', kr.code, kr.name);
+                        });
+                        dropdown.appendChild(item);
+                    });
+                }
+                
+                dropdown.style.display = 'block';
+            }
+
+            input.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
+                
+                if (searchTerm.length > 0) {
+                    filterKodRenks(searchTerm);
+                } else {
+                    dropdown.style.display = 'none';
+                    selectCallback(null);
+                }
+            });
+
+            input.addEventListener('focus', function() {
+                if (this.value.trim().length > 0) {
+                    filterKodRenks(this.value.trim());
+                }
+            });
+
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Backspace' || event.key === 'Delete') {
+                    setTimeout(() => {
+                        if (this.value.trim() === '') {
+                            selectCallback(null);
+                        }
+                    }, 10);
+                }
+            });
+        }
+
+        // Setup both kod renk selects for weranda section
+        setupKodRenkSelect(kodRenkInput1, kodRenkDropdown1, (kr) => {
+            selectedKodRenk1 = kr;
+        });
+        
+        setupKodRenkSelect(kodRenkInput2, kodRenkDropdown2, (kr) => {
+            selectedKodRenk2 = kr;
+        });
+        
+        // Setup both kod renk selects for measurement section
+        setupKodRenkSelect(measurementKodRenkInput1, measurementKodRenkDropdown1, (kr) => {
+            selectedMeasurementKodRenk1 = kr;
+        });
+        
+        setupKodRenkSelect(measurementKodRenkInput2, measurementKodRenkDropdown2, (kr) => {
+            selectedMeasurementKodRenk2 = kr;
+        });
 
         // Karniz gornus select functionality
         const karnizSelect = document.getElementById('karniz-gornus');
@@ -357,6 +536,10 @@
         selpeSelect.addEventListener('change', function() {
             selectedSelpeOption = this.value;
             console.log('Выбрана опция Selpe:', selectedSelpeOption);
+            // Update title if weranda is also selected
+            if (werandaCheckbox.checked && selectedWerandaOption) {
+                updateWerandaTitle();
+            }
         });
 
         // Radio button functionality
@@ -383,6 +566,24 @@
         const werandaLabelD = document.getElementById('weranda-label-d');
         const measurementSection = document.querySelector('.measurement-section');
         let selectedWerandaOption = null;
+        const werandaSelectionTitle = document.getElementById('weranda-selection-title');
+
+        function updateWerandaTitle() {
+            let titleText = '';
+            
+            // Add Selpe info if selected
+            if (selpeCheckbox.checked && selectedSelpeOption) {
+                titleText += 'Selpe: ' + selectedSelpeOption;
+            }
+            
+            // Add Weranda info if selected
+            if (selectedWerandaOption) {
+                if (titleText) titleText += ' | ';
+                titleText += 'Weranda: ' + selectedWerandaOption;
+            }
+            
+            werandaSelectionTitle.textContent = titleText;
+        }
 
         werandaCheckbox.addEventListener('change', function() {
             if (this.checked) {
@@ -417,17 +618,20 @@
             // Show labels based on selected option
             if (selectedWerandaOption === '2-bolek') {
                 werandaLabelsContainer.style.display = 'flex';
+                updateWerandaTitle();
                 werandaLabelA.style.display = 'flex';
                 werandaLabelB.style.display = 'flex';
                 console.log('Показаны метки: a, b');
             } else if (selectedWerandaOption === '3-bolek') {
                 werandaLabelsContainer.style.display = 'flex';
+                updateWerandaTitle();
                 werandaLabelA.style.display = 'flex';
                 werandaLabelB.style.display = 'flex';
                 werandaLabelC.style.display = 'flex';
                 console.log('Показаны метки: a, b, c');
             } else if (selectedWerandaOption === '4-bolek') {
                 werandaLabelsContainer.style.display = 'flex';
+                updateWerandaTitle();
                 werandaLabelA.style.display = 'flex';
                 werandaLabelB.style.display = 'flex';
                 werandaLabelC.style.display = 'flex';
@@ -435,6 +639,7 @@
                 console.log('Показаны метки: a, b, c, d');
             } else {
                 werandaLabelsContainer.style.display = 'none';
+                werandaSelectionTitle.textContent = '';
                 console.log('Метки скрыты');
             }
         });
@@ -476,6 +681,21 @@
                     // Select this category
                     this.classList.add('selected');
                     selectedCategory = categoryName;
+                }
+                
+                // Show/hide second kod renk select based on Multi stor selection
+                if (selectedCategory === 'Multi stor') {
+                    kodRenkSelect2Wrapper.style.display = 'block';
+                    measurementKodRenkSelect2Wrapper.style.display = 'block';
+                    console.log('Показаны вторые kod renk selects');
+                } else {
+                    kodRenkSelect2Wrapper.style.display = 'none';
+                    kodRenkInput2.value = '';
+                    selectedKodRenk2 = null;
+                    measurementKodRenkSelect2Wrapper.style.display = 'none';
+                    measurementKodRenkInput2.value = '';
+                    selectedMeasurementKodRenk2 = null;
+                    console.log('Скрыты вторые kod renk selects');
                 }
                 
                 console.log('Выбранная категория:', selectedCategory);
@@ -600,19 +820,47 @@
             const selpeSelectGroup = entry.querySelector('.selpe-select-group');
             const selpeSelect = entry.querySelector('[id^="selpe-select"]');
             
-            selpeCheckbox.addEventListener('change', function() {
-                selpeSelectGroup.style.display = this.checked ? 'block' : 'none';
-                if (!this.checked) {
-                    selpeSelect.value = '';
-                }
-            });
-            
             // Weranda checkbox
             const werandaCheckbox = entry.querySelector('[id^="weranda-checkbox"]');
             const werandaSelectGroup = entry.querySelector('.weranda-select-group');
             const werandaSelect = entry.querySelector('[id^="weranda-select"]');
             const werandaLabelsContainer = entry.querySelector('.weranda-labels-container');
             const measurementSection = entry.querySelector('.measurement-section');
+            const werandaSelectionTitle = entry.querySelector('.weranda-selection-title');
+            
+            // Function to update title with both Selpe and Weranda selections
+            function updateEntryTitle() {
+                let titleText = '';
+                
+                if (selpeCheckbox.checked && selpeSelect.value) {
+                    titleText += 'Selpe: ' + selpeSelect.value;
+                }
+                
+                if (werandaSelect.value) {
+                    if (titleText) titleText += ' | ';
+                    titleText += 'Weranda: ' + werandaSelect.value;
+                }
+                
+                werandaSelectionTitle.textContent = titleText;
+            }
+            
+            selpeCheckbox.addEventListener('change', function() {
+                selpeSelectGroup.style.display = this.checked ? 'block' : 'none';
+                if (!this.checked) {
+                    selpeSelect.value = '';
+                }
+                // Update title if weranda is selected
+                if (werandaCheckbox.checked && werandaSelect.value) {
+                    updateEntryTitle();
+                }
+            });
+            
+            selpeSelect.addEventListener('change', function() {
+                // Update title if weranda is selected
+                if (werandaCheckbox.checked && werandaSelect.value) {
+                    updateEntryTitle();
+                }
+            });
             
             werandaCheckbox.addEventListener('change', function() {
                 if (this.checked) {
@@ -643,21 +891,25 @@
                 
                 if (this.value === '2-bolek') {
                     werandaLabelsContainer.style.display = 'flex';
+                    updateEntryTitle();
                     labels.a.style.display = 'flex';
                     labels.b.style.display = 'flex';
                 } else if (this.value === '3-bolek') {
                     werandaLabelsContainer.style.display = 'flex';
+                    updateEntryTitle();
                     labels.a.style.display = 'flex';
                     labels.b.style.display = 'flex';
                     labels.c.style.display = 'flex';
                 } else if (this.value === '4-bolek') {
                     werandaLabelsContainer.style.display = 'flex';
+                    updateEntryTitle();
                     labels.a.style.display = 'flex';
                     labels.b.style.display = 'flex';
                     labels.c.style.display = 'flex';
                     labels.d.style.display = 'flex';
                 } else {
                     werandaLabelsContainer.style.display = 'none';
+                    werandaSelectionTitle.textContent = '';
                 }
             });
             

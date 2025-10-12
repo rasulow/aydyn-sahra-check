@@ -271,21 +271,8 @@
     </div>
 
     <script>
-        // Sample user data with regions
-        const users = [
-            { id: 1, name: 'Иванов Иван Иванович', region: 'Ашхабад' },
-            { id: 2, name: 'Петров Петр Петрович', region: 'Ахал' },
-            { id: 3, name: 'Сидоров Сидор Сидорович', region: 'Балкан' },
-            { id: 4, name: 'Козлов Козел Козлович', region: 'Дашогуз' },
-            { id: 5, name: 'Медведев Медведь Медведевич', region: 'Лебап' },
-            { id: 6, name: 'Волков Волк Волкович', region: 'Мары' },
-            { id: 7, name: 'Лисицын Лис Лисович', region: 'Ашхабад' },
-            { id: 8, name: 'Зайцев Заяц Зайцевич', region: 'Ахал' },
-            { id: 9, name: 'Орлов Орел Орлович', region: 'Балкан' },
-            { id: 10, name: 'Соколов Сокол Соколович', region: 'Дашогуз' },
-            { id: 11, name: 'Ястребов Ястреб Ястребович', region: 'Лебап' },
-            { id: 12, name: 'Беркутов Беркут Беркутович', region: 'Мары' }
-        ];
+        // Load clients data from backend
+        const users = {{ clients_json|safe }};
 
         const userInput = document.getElementById('user-select');
         const userDropdown = document.getElementById('user-dropdown');
@@ -412,26 +399,14 @@
         console.log('Страница проверки заказов загружена');
         console.log('Доступно пользователей:', users.length);
 
-        // Kod renk (color codes) data
-        const kodRenks = [
-            { id: 1, code: 'KR-001', name: 'Белый' },
-            { id: 2, code: 'KR-002', name: 'Черный' },
-            { id: 3, code: 'KR-003', name: 'Серый' },
-            { id: 4, code: 'KR-004', name: 'Бежевый' },
-            { id: 5, code: 'KR-005', name: 'Коричневый' },
-            { id: 6, code: 'KR-006', name: 'Синий' },
-            { id: 7, code: 'KR-007', name: 'Зеленый' },
-            { id: 8, code: 'KR-008', name: 'Красный' },
-            { id: 9, code: 'KR-009', name: 'Желтый' },
-            { id: 10, code: 'KR-010', name: 'Оранжевый' }
-        ];
+        // Load colors data from backend
+        const kodRenks = {{ colors_json|safe }};
 
         // Helper function to setup kod renk select
         function setupKodRenkSelect(input, dropdown, selectCallback) {
             function filterKodRenks(searchTerm) {
                 const filtered = kodRenks.filter(kr => 
-                    kr.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    kr.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    kr.code.toLowerCase().includes(searchTerm.toLowerCase())
                 );
                 
                 displayKodRenks(filtered);
@@ -446,12 +421,12 @@
                     kodRenkList.forEach(kr => {
                         const item = document.createElement('div');
                         item.className = 'dropdown-item';
-                        item.textContent = kr.code + ' - ' + kr.name;
+                        item.textContent = kr.code + ' (Price: ' + kr.price + ')';
                         item.addEventListener('click', () => {
-                            input.value = kr.code + ' - ' + kr.name;
+                            input.value = kr.code;
                             dropdown.style.display = 'none';
                             selectCallback(kr);
-                            console.log('Выбран код цвета:', kr.code, kr.name);
+                            console.log('Выбран код цвета:', kr.code, 'Price:', kr.price);
                         });
                         dropdown.appendChild(item);
                     });

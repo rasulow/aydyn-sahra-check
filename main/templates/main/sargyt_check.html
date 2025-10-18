@@ -126,6 +126,10 @@
                     <span class="btn-icon">+</span>
                     <span class="btn-text">Добавить заказ</span>
                 </button>
+                <button class="download-btn" id="download-btn" onclick="downloadAsWord()">
+                    <span class="btn-icon">📥</span>
+                    <span class="btn-text">Скачать Word</span>
+                </button>
             </div>
         </div>
     </div>
@@ -749,6 +753,204 @@
             tableContainer.remove();
             
             console.log('Удалена таблица: Заказ №' + tableNumber);
+        }
+        
+        // Function to download data as Word document
+        function downloadAsWord() {
+            console.log('Starting download...');
+            
+            try {
+                // Collect all form data
+                const formData = collectAllFormData();
+                console.log('Form data collected:', formData);
+                
+                // Create Word document content
+                const wordContent = generateWordContent(formData);
+                console.log('Word content generated');
+                
+                // Create Blob with UTF-8 BOM for proper encoding
+                const bom = '\ufeff';
+                const blob = new Blob([bom + wordContent], {
+                    type: 'application/msword;charset=utf-8'
+                });
+                
+                console.log('Blob created, size:', blob.size);
+                
+                // Create download link
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Sargyt_${new Date().toISOString().split('T')[0]}.doc`;
+                link.style.display = 'none';
+                
+                // Append, click, and remove
+                document.body.appendChild(link);
+                console.log('Link appended to body');
+                
+                link.click();
+                console.log('Link clicked');
+                
+                // Clean up after a delay
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    console.log('Cleanup completed');
+                }, 100);
+                
+                alert('Word документ скачан!');
+                
+            } catch (error) {
+                console.error('Error downloading Word document:', error);
+                alert('Ошибка при скачивании: ' + error.message);
+            }
+        }
+        
+        // Collect all form data from the page
+        function collectAllFormData() {
+            const data = {
+                client: document.getElementById('user-select').value,
+                clientType: document.getElementById('client-type-select').value,
+                currency: document.getElementById('currency-select').value,
+                date: document.getElementById('date-input').value,
+                orders: []
+            };
+            
+            // Get all tables
+            const tables = document.querySelectorAll('.table-container');
+            
+            tables.forEach((tableContainer, tableIndex) => {
+                const orderData = {
+                    orderNumber: tableIndex + 1,
+                    rows: []
+                };
+                
+                // Get all rows from the table
+                const rows = tableContainer.querySelectorAll('.table-row');
+                
+                rows.forEach((row) => {
+                    const rowData = {
+                        number: row.querySelector('.row-number').textContent,
+                        en: row.querySelector('td:nth-child(2) input').value,
+                        boy: row.querySelector('td:nth-child(3) input').value,
+                        karniz: row.querySelector('.karniz-select').value,
+                        category: row.querySelector('.category-select').selectedOptions[0]?.text || '',
+                        kodRenk: row.querySelector('.kodrenk-search').value,
+                        selpe: row.querySelector('.selpe-select').value,
+                        bellik: row.querySelector('td:nth-child(8) input').value,
+                        sany: row.querySelector('td:nth-child(9) input').value,
+                        isWeranda: row.getAttribute('data-weranda') === 'true',
+                        werandaType: row.getAttribute('data-weranda-type') || '',
+                        werandaLabel: row.getAttribute('data-weranda-label') || ''
+                    };
+                    
+                    orderData.rows.push(rowData);
+                });
+                
+                data.orders.push(orderData);
+            });
+            
+            return data;
+        }
+        
+        // Generate Word document HTML content
+        function generateWordContent(data) {
+            // Get client name from select
+            const clientSelect = document.getElementById('user-select');
+            const clientName = clientSelect.selectedOptions[0]?.text || 'Не выбран';
+            
+            const clientTypeSelect = document.getElementById('client-type-select');
+            const clientTypeName = clientTypeSelect.selectedOptions[0]?.text || 'Не выбран';
+            
+            const currencySelect = document.getElementById('currency-select');
+            const currencyName = currencySelect.selectedOptions[0]?.text || 'Не выбрана';
+            
+            let html = `
+<html xmlns:o='urn:schemas-microsoft-com:office:office' 
+      xmlns:w='urn:schemas-microsoft-com:office:word' 
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset='utf-8'>
+    <title>Sargyt</title>
+    <style>
+        body { font-family: 'Times New Roman', serif; font-size: 12pt; }
+        h1 { text-align: center; font-size: 18pt; margin-bottom: 20px; }
+        h2 { font-size: 14pt; margin-top: 20px; margin-bottom: 10px; }
+        .info-section { margin-bottom: 20px; }
+        .info-row { margin-bottom: 5px; }
+        .info-label { font-weight: bold; display: inline-block; width: 150px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; margin-bottom: 20px; }
+        th, td { border: 1px solid black; padding: 5px; text-align: left; font-size: 10pt; }
+        th { background-color: #f0f0f0; font-weight: bold; }
+        .weranda-row { background-color: #e8f4ff; }
+        .page-break { page-break-after: always; }
+    </style>
+</head>
+<body>
+    <h1>Заказ на производство</h1>
+    
+    <div class='info-section'>
+        <div class='info-row'><span class='info-label'>Müşderi:</span> ${clientName}</div>
+        <div class='info-row'><span class='info-label'>Müşderi görnüşi:</span> ${clientTypeName}</div>
+        <div class='info-row'><span class='info-label'>Walýuta:</span> ${currencyName}</div>
+        <div class='info-row'><span class='info-label'>Sene:</span> ${data.date}</div>
+    </div>
+`;
+            
+            // Add each order table
+            data.orders.forEach((order, index) => {
+                html += `
+    <h2>Sargyt №${order.orderNumber}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>№</th>
+                <th>En</th>
+                <th>Boý</th>
+                <th>Karniz</th>
+                <th>Kategoriýa</th>
+                <th>Kod Renk</th>
+                <th>Şelpe</th>
+                <th>Bellik</th>
+                <th>Sany</th>
+            </tr>
+        </thead>
+        <tbody>
+`;
+                
+                order.rows.forEach(row => {
+                    const rowClass = row.isWeranda ? "class='weranda-row'" : '';
+                    html += `
+            <tr ${rowClass}>
+                <td>${row.number}</td>
+                <td>${row.en}</td>
+                <td>${row.boy}</td>
+                <td>${row.karniz}</td>
+                <td>${row.category}</td>
+                <td>${row.kodRenk}</td>
+                <td>${row.selpe}</td>
+                <td>${row.bellik}</td>
+                <td>${row.sany}</td>
+            </tr>
+`;
+                });
+                
+                html += `
+        </tbody>
+    </table>
+`;
+                
+                // Add page break between orders (except after the last one)
+                if (index < data.orders.length - 1) {
+                    html += `<div class='page-break'></div>`;
+                }
+            });
+            
+            html += `
+</body>
+</html>
+`;
+            
+            return html;
         }
     </script>
 </body>

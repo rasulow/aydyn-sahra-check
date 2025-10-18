@@ -38,6 +38,20 @@
                            placeholder="Регион будет выбран автоматически" 
                            readonly>
                 </div>
+                
+                <div class="selection-group">
+                    <label for="currency-select">Valyuta:</label>
+                    <select id="currency-select" class="select-field">
+                        <option value="">Выберите валюту...</option>
+                    </select>
+                </div>
+                
+                <div class="selection-group">
+                    <label for="client-type-select">Musderi gornusi:</label>
+                    <select id="client-type-select" class="select-field">
+                        <option value="">Выберите тип...</option>
+                    </select>
+                </div>
             </div>
 
             <div id="entries-container">
@@ -138,87 +152,87 @@
                         </select>
                     </div>
                     
-                    <div class="weranda-labels-container" id="weranda-labels-container" style="display: none;">
-                        <div class="weranda-selection-title" id="weranda-selection-title"></div>
-                        <div class="weranda-label" id="weranda-label-a" style="display: none;">
-                            <span class="label-text">a</span>
-                            <div class="label-inputs">
-                                <div class="input-field-group">
-                                    <label class="input-label">Width</label>
-                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                </div>
-                                <div class="input-field-group">
-                                    <label class="input-label">Height</label>
-                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                </div>
+                </div>
+                <div class="weranda-labels-container" id="weranda-labels-container" style="display: none;">
+                    <div class="weranda-selection-title" id="weranda-selection-title"></div>
+                    <div class="weranda-label" id="weranda-label-a" style="display: none;">
+                        <span class="label-text">a</span>
+                        <div class="label-inputs">
+                            <div class="input-field-group">
+                                <label class="input-label">Width</label>
+                                <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                            </div>
+                            <div class="input-field-group">
+                                <label class="input-label">Height</label>
+                                <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
                             </div>
                         </div>
-                        <div class="weranda-label" id="weranda-label-b" style="display: none;">
-                            <span class="label-text">b</span>
-                            <div class="label-inputs">
-                                <div class="input-field-group">
-                                    <label class="input-label">Width</label>
-                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                </div>
-                                <div class="input-field-group">
-                                    <label class="input-label">Height</label>
-                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                </div>
+                    </div>
+                    <div class="weranda-label" id="weranda-label-b" style="display: none;">
+                        <span class="label-text">b</span>
+                        <div class="label-inputs">
+                            <div class="input-field-group">
+                                <label class="input-label">Width</label>
+                                <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                            </div>
+                            <div class="input-field-group">
+                                <label class="input-label">Height</label>
+                                <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
                             </div>
                         </div>
-                        <div class="weranda-label" id="weranda-label-c" style="display: none;">
-                            <span class="label-text">c</span>
-                            <div class="label-inputs">
-                                <div class="input-field-group">
-                                    <label class="input-label">Width</label>
-                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                </div>
-                                <div class="input-field-group">
-                                    <label class="input-label">Height</label>
-                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                </div>
+                    </div>
+                    <div class="weranda-label" id="weranda-label-c" style="display: none;">
+                        <span class="label-text">c</span>
+                        <div class="label-inputs">
+                            <div class="input-field-group">
+                                <label class="input-label">Width</label>
+                                <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                            </div>
+                            <div class="input-field-group">
+                                <label class="input-label">Height</label>
+                                <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
                             </div>
                         </div>
-                        <div class="weranda-label" id="weranda-label-d" style="display: none;">
-                            <span class="label-text">d</span>
-                            <div class="label-inputs">
-                                <div class="input-field-group">
-                                    <label class="input-label">Width</label>
-                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                </div>
-                                <div class="input-field-group">
-                                    <label class="input-label">Height</label>
-                                    <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
-                                </div>
+                    </div>
+                    <div class="weranda-label" id="weranda-label-d" style="display: none;">
+                        <span class="label-text">d</span>
+                        <div class="label-inputs">
+                            <div class="input-field-group">
+                                <label class="input-label">Width</label>
+                                <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
+                            </div>
+                            <div class="input-field-group">
+                                <label class="input-label">Height</label>
+                                <input type="number" class="label-input" placeholder="0" min="0" step="0.1">
                             </div>
                         </div>
-                        
-                        <div class="sany-section">
-                            <label class="sany-label">Sany:</label>
-                            <input type="number" id="weranda-sany" class="sany-input" placeholder="0" min="0" step="1">
-                        </div>
-                        
-                        <div class="kod-renk-section" id="kod-renk-section">
-                            <label class="kod-renk-label">Kod renk:</label>
-                            <div class="kod-renk-selects-container">
-                                <div class="searchable-select kod-renk-select-wrapper">
-                                    <input type="text" 
-                                           id="kod-renk-select-1" 
-                                           class="select-input" 
-                                           placeholder="Начните вводить код цвета..." 
-                                           autocomplete="off">
-                                    <div id="kod-renk-dropdown-1" class="dropdown-list"></div>
-                                </div>
-                                <div class="searchable-select kod-renk-select-wrapper" id="kod-renk-select-2-wrapper" style="display: none;">
-                                    <input type="text" 
-                                           id="kod-renk-select-2" 
-                                           class="select-input" 
-                                           placeholder="Начните вводить код цвета 2..." 
-                                           autocomplete="off">
-                                    <div id="kod-renk-dropdown-2" class="dropdown-list"></div>
-                                </div>
+                    </div>
+                    
+                    <div class="kod-renk-section" id="kod-renk-section">
+                        <label class="kod-renk-label">Kod renk:</label>
+                        <div class="kod-renk-selects-container">
+                            <div class="searchable-select kod-renk-select-wrapper">
+                                <input type="text" 
+                                       id="kod-renk-select-1" 
+                                       class="select-input" 
+                                       placeholder="Начните вводить код цвета..." 
+                                       autocomplete="off">
+                                <div id="kod-renk-dropdown-1" class="dropdown-list"></div>
+                            </div>
+                            <div class="searchable-select kod-renk-select-wrapper" id="kod-renk-select-2-wrapper" style="display: none;">
+                                <input type="text" 
+                                       id="kod-renk-select-2" 
+                                       class="select-input" 
+                                       placeholder="Начните вводить код цвета 2..." 
+                                       autocomplete="off">
+                                <div id="kod-renk-dropdown-2" class="dropdown-list"></div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="sany-section">
+                        <label class="sany-label">Sany:</label>
+                        <input type="number" id="weranda-sany" class="sany-input" placeholder="0" min="0" step="1">
                     </div>
                 </div>
                 
@@ -236,10 +250,7 @@
                             </div>
                         </div>
                         
-                        <div class="sany-section">
-                            <label class="sany-label">Sany:</label>
-                            <input type="number" id="measurement-sany" class="sany-input" placeholder="0" min="0" step="1">
-                        </div>
+                        
                         
                         <div class="kod-renk-section measurement-kod-renk" id="measurement-kod-renk-section">
                             <label class="kod-renk-label">Kod renk:</label>
@@ -262,6 +273,11 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="sany-section">
+                            <label class="sany-label">Sany:</label>
+                            <input type="number" id="measurement-sany" class="sany-input" placeholder="0" min="0" step="1">
+                        </div>
                     </div>
                     </div>
                 </div>
@@ -279,10 +295,14 @@
     <script>
         // Load clients data from backend
         const users = {{ clients_json|safe }};
+        const currencies = {{ currencies_json|safe }};
+        const clientTypes = {{ client_types_json|safe }};
 
         const userInput = document.getElementById('user-select');
         const userDropdown = document.getElementById('user-dropdown');
         const regionDisplay = document.getElementById('user-region');
+        const currencySelect = document.getElementById('currency-select');
+        const clientTypeSelect = document.getElementById('client-type-select');
         const kodRenkInput1 = document.getElementById('kod-renk-select-1');
         const kodRenkDropdown1 = document.getElementById('kod-renk-dropdown-1');
         const kodRenkInput2 = document.getElementById('kod-renk-select-2');
@@ -300,6 +320,36 @@
         let selectedKodRenk2 = null;
         let selectedMeasurementKodRenk1 = null;
         let selectedMeasurementKodRenk2 = null;
+        let selectedCurrency = null;
+        let selectedClientType = null;
+
+        // Populate currency select
+        currencies.forEach(currency => {
+            const option = document.createElement('option');
+            option.value = currency.id;
+            option.textContent = currency.kod;
+            currencySelect.appendChild(option);
+        });
+
+        // Populate client type select
+        clientTypes.forEach(clientType => {
+            const option = document.createElement('option');
+            option.value = clientType.id;
+            option.textContent = clientType.type;
+            clientTypeSelect.appendChild(option);
+        });
+
+        // Currency select change handler
+        currencySelect.addEventListener('change', function() {
+            selectedCurrency = this.value ? currencies.find(c => c.id == this.value) : null;
+            console.log('Выбрана валюта:', selectedCurrency);
+        });
+
+        // Client type select change handler
+        clientTypeSelect.addEventListener('change', function() {
+            selectedClientType = this.value ? clientTypes.find(ct => ct.id == this.value) : null;
+            console.log('Выбран тип клиента:', selectedClientType);
+        });
 
         // Filter and display users based on search
         function filterUsers(searchTerm) {

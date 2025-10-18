@@ -14,7 +14,7 @@ def home(request):
 
 def sargyt_check(request):
     """Sargyt we check page with data checking form"""
-    from .models import Client, Color
+    from .models import Client, Color, Currency, ClientType
     import json
     
     # Get all clients with their regions
@@ -39,9 +39,31 @@ def sargyt_check(request):
         for color in colors
     ]
     
+    # Get all currencies
+    currencies = Currency.objects.all()
+    currencies_data = [
+        {
+            'id': currency.id,
+            'kod': currency.kod
+        }
+        for currency in currencies
+    ]
+    
+    # Get all client types
+    client_types = ClientType.objects.all()
+    client_types_data = [
+        {
+            'id': client_type.id,
+            'type': client_type.type
+        }
+        for client_type in client_types
+    ]
+    
     context = {
         'clients_json': json.dumps(clients_data),
         'colors_json': json.dumps(colors_data),
+        'currencies_json': json.dumps(currencies_data),
+        'client_types_json': json.dumps(client_types_data),
     }
     
     return render(request, 'main/sargyt_check.html', context)

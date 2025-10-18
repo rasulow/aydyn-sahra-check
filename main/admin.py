@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Region, Client, Color
+from .models import Region, Client, Color, Currency, ClientType
 
 
 @admin.register(Region)
@@ -61,15 +61,68 @@ class ClientAdmin(admin.ModelAdmin):
     autocomplete_fields = ['region']
 
 
-@admin.register(Color)
-class ColorAdmin(admin.ModelAdmin):
-    list_display = ('id', 'kod', 'price', 'formatted_created_at', 'formatted_updated_at')
+@admin.register(Currency)
+class CurrencyAdmin(admin.ModelAdmin):
+    list_display = ('id', 'kod', 'formatted_created_at', 'formatted_updated_at')
     list_display_links = ('id', 'kod')
     search_fields = ('kod',)
     list_filter = ('created_at', 'updated_at')
     ordering = ('kod',)
     readonly_fields = ('formatted_created_at', 'formatted_updated_at')
+    
+    def formatted_created_at(self, obj):
+        return obj.created_at.strftime('%d.%m.%Y')
+    formatted_created_at.short_description = 'Создан'
+    formatted_created_at.admin_order_field = 'created_at'
+    
+    def formatted_updated_at(self, obj):
+        return obj.updated_at.strftime('%d.%m.%Y')
+    formatted_updated_at.short_description = 'Обновлен'
+    formatted_updated_at.admin_order_field = 'updated_at'
+    
+    fieldsets = (
+        ('Информация о валюте', {
+            'fields': ('kod',)
+        }),
+    )
+
+
+@admin.register(ClientType)
+class ClientTypeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'type', 'formatted_created_at', 'formatted_updated_at')
+    list_display_links = ('id', 'type')
+    search_fields = ('type',)
+    list_filter = ('created_at', 'updated_at')
+    ordering = ('type',)
+    readonly_fields = ('formatted_created_at', 'formatted_updated_at')
+    
+    def formatted_created_at(self, obj):
+        return obj.created_at.strftime('%d.%m.%Y')
+    formatted_created_at.short_description = 'Создан'
+    formatted_created_at.admin_order_field = 'created_at'
+    
+    def formatted_updated_at(self, obj):
+        return obj.updated_at.strftime('%d.%m.%Y')
+    formatted_updated_at.short_description = 'Обновлен'
+    formatted_updated_at.admin_order_field = 'updated_at'
+    
+    fieldsets = (
+        ('Информация о типе клиента', {
+            'fields': ('type',)
+        }),
+    )
+
+
+@admin.register(Color)
+class ColorAdmin(admin.ModelAdmin):
+    list_display = ('id', 'kod', 'price', 'currency', 'client_type', 'formatted_created_at', 'formatted_updated_at')
+    list_display_links = ('id', 'kod')
+    search_fields = ('kod',)
+    list_filter = ('currency', 'client_type', 'created_at', 'updated_at')
+    ordering = ('kod',)
+    readonly_fields = ('formatted_created_at', 'formatted_updated_at')
     list_per_page = 100
+    autocomplete_fields = ['currency', 'client_type']
     
     def formatted_created_at(self, obj):
         return obj.created_at.strftime('%d.%m.%Y')
@@ -83,6 +136,6 @@ class ColorAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Информация о цвете', {
-            'fields': ('kod', 'price')
+            'fields': ('kod', 'price', 'currency', 'client_type')
         }),
     )

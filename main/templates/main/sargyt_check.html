@@ -6,6 +6,8 @@
     <title>Проверка заказов - Верификация данных</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'main/css/sargyt_check.css' %}">
+    <!-- SheetJS library for Excel export -->
+    <script src="{% static 'main/js/xlsx.full.min.js' %}"></script>
 </head>
 <body>
     <div class="container">
@@ -16,46 +18,18 @@
             <p>Проверка и подтверждение данных заказов</p>
         </div>
 
-        <div class="main-selection-container">
-            <div class="selection-row">
-                <div class="selection-group">
-                    <label for="user-select">Выберите пользователя:</label>
-                    <div class="searchable-select">
-                        <input type="text" 
-                               id="user-select" 
-                               class="select-input" 
-                               placeholder="Начните вводить имя пользователя..." 
-                               autocomplete="off">
-                        <div id="user-dropdown" class="dropdown-list"></div>
-                    </div>
-                </div>
-                
-                <div class="selection-group">
-                    <label for="user-region">Регион пользователя:</label>
-                    <input type="text" 
-                           id="user-region" 
-                           class="region-display" 
-                           placeholder="Регион будет выбран автоматически" 
-                           readonly>
-                </div>
-                
-                <div class="selection-group">
-                    <label for="currency-select">Valyuta:</label>
-                    <select id="currency-select" class="select-field">
-                        <option value="">Выберите валюту...</option>
-                    </select>
-                </div>
-                
-                <div class="selection-group">
-                    <label for="client-type-select">Musderi gornusi:</label>
-                    <select id="client-type-select" class="select-field">
-                        <option value="">Выберите тип...</option>
-                    </select>
-                </div>
-            </div>
+        <!-- Initial Add Order Button -->
+        <div class="initial-add-container" id="initial-add-container">
+            <button class="add-table-btn" id="initial-add-order-btn" onclick="openUserDataModal()">
+                <span class="btn-icon">+</span>
+                <span class="btn-text">Добавить заказ</span>
+            </button>
         </div>
 
-        <div class="table-container" data-table-number="1">
+        <!-- Container for all tables - initially hidden -->
+        <div id="tables-wrapper" style="display: none;">
+        
+        <div class="table-container" data-table-number="1" style="display: none;">
             <div class="table-header">
                 <h3 class="table-title">Заказ №1</h3>
                 <button class="delete-table-btn" onclick="deleteTable(this)" title="Удалить таблицу">✕</button>
@@ -71,7 +45,6 @@
                         <th>Kod renk</th>
                         <th>Selpe</th>
                         <th>Bellik</th>
-                        <th>Sany</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -83,10 +56,8 @@
                         <td>
                             <select class="table-select karniz-select">
                                 <option value="">Выберите...</option>
-                                <option value="option1">Опция 1</option>
-                                <option value="option2">Опция 2</option>
-                                <option value="option3">Опция 3</option>
-                                <option value="option4">Опция 4</option>
+                                <option value="mata">Dine mata</option>
+                                <option value="karniz_komplekt">Karniz komplekt</option>
                             </select>
                         </td>
                         <td>
@@ -103,13 +74,9 @@
                         <td>
                             <select class="table-select selpe-select">
                                 <option value="">-</option>
-                                <option value="1-gat">1 gat</option>
-                                <option value="2-gat">2 gat</option>
-                                <option value="3-gat">3 gat</option>
                             </select>
                         </td>
                         <td><input type="text" class="table-input" placeholder="Примечание"></td>
-                        <td><input type="number" class="table-input" value="1" min="1" step="1"></td>
                         <td>
                             <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
                         </td>
@@ -126,10 +93,45 @@
                     <span class="btn-icon">+</span>
                     <span class="btn-text">Добавить заказ</span>
                 </button>
-                <button class="download-btn" id="download-btn" onclick="downloadAsWord()">
+                <button class="download-btn" id="download-btn" onclick="downloadAsExcel()">
                     <span class="btn-icon">📥</span>
-                    <span class="btn-text">Скачать Word</span>
+                    <span class="btn-text">Скачать Excel</span>
                 </button>
+            </div>
+        </div>
+        
+        </div><!-- End tables-wrapper -->
+    </div>
+
+    <!-- Modal for User Data Input -->
+    <div id="user-data-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">Введите данные заказа</h3>
+            <div class="user-data-form">
+                <div class="selection-group">
+                    <label for="modal-user-select">Выберите пользователя:</label>
+                    <div class="searchable-select">
+                        <input type="text" 
+                               id="modal-user-select" 
+                               class="select-input" 
+                               placeholder="Начните вводить имя пользователя..." 
+                               autocomplete="off">
+                        <div id="modal-user-dropdown" class="dropdown-list"></div>
+                    </div>
+                </div>
+                
+                <div class="selection-group">
+                    <label for="modal-user-region">Регион пользователя:</label>
+                    <input type="text" 
+                           id="modal-user-region" 
+                           class="region-display" 
+                           placeholder="Регион будет выбран автоматически" 
+                           readonly>
+                </div>
+            </div>
+            <div class="modal-action-buttons">
+                <button class="modal-btn modal-btn-confirm" onclick="confirmUserData()">Добавить</button>
+                <button class="modal-btn modal-btn-cancel" onclick="closeUserDataModal()">Отмена</button>
             </div>
         </div>
     </div>
@@ -162,103 +164,117 @@
     <script>
         // Load clients data from backend
         const users = {{ clients_json|safe }};
-        const currencies = {{ currencies_json|safe }};
-        const clientTypes = {{ client_types_json|safe }};
+        const karnizOptions = {{ karniz_json|safe }};
+        const selpeOptions = {{ selpe_json|safe }};
 
-        const userInput = document.getElementById('user-select');
-        const userDropdown = document.getElementById('user-dropdown');
-        const regionDisplay = document.getElementById('user-region');
-        const currencySelect = document.getElementById('currency-select');
-        const clientTypeSelect = document.getElementById('client-type-select');
+        // Modal elements
+        const modalUserInput = document.getElementById('modal-user-select');
+        const modalUserDropdown = document.getElementById('modal-user-dropdown');
+        const modalRegionDisplay = document.getElementById('modal-user-region');
         
-        let selectedUser = null;
-        let selectedCurrency = null;
-        let selectedClientType = null;
+        let modalSelectedUser = null;
+        let currentTableUserData = {}; // Store user data for each table
 
-        // Populate currency select
-        currencies.forEach(currency => {
-            const option = document.createElement('option');
-            option.value = currency.id;
-            option.textContent = currency.kod;
-            currencySelect.appendChild(option);
-        });
+        // Open user data modal
+        function openUserDataModal() {
+            const modal = document.getElementById('user-data-modal');
+            modal.classList.add('show');
+        }
 
-        // Populate client type select
-        clientTypes.forEach(clientType => {
-            const option = document.createElement('option');
-            option.value = clientType.id;
-            option.textContent = clientType.type;
-            clientTypeSelect.appendChild(option);
-        });
+        // Close user data modal
+        function closeUserDataModal() {
+            const modal = document.getElementById('user-data-modal');
+            modal.classList.remove('show');
+            
+            // Reset modal inputs
+            modalUserInput.value = '';
+            modalRegionDisplay.value = '';
+            modalSelectedUser = null;
+        }
 
-        // Currency select change handler
-        currencySelect.addEventListener('change', function() {
-            selectedCurrency = this.value ? currencies.find(c => c.id == this.value) : null;
-            console.log('Выбрана валюта:', selectedCurrency);
-        });
+        // Add user data display to table
+        function addUserDataToTable(tableContainer, tableNumber) {
+            const userData = currentTableUserData[tableNumber];
+            if (!userData) return;
+            
+            const tableHeader = tableContainer.querySelector('.table-header');
+            
+            // Check if user data display already exists
+            let userDataDisplay = tableContainer.querySelector('.user-data-display');
+            if (!userDataDisplay) {
+                userDataDisplay = document.createElement('div');
+                userDataDisplay.className = 'user-data-display';
+                tableHeader.insertAdjacentElement('afterend', userDataDisplay);
+            }
+            
+            userDataDisplay.innerHTML = `
+                <div class="user-data-row">
+                    <span class="user-data-label">User:</span>
+                    <span class="user-data-value">${userData.user.name}</span>
+                </div>
+                <div class="user-data-row">
+                    <span class="user-data-label">Region:</span>
+                    <span class="user-data-value">${userData.region}</span>
+                </div>
+            `;
+        }
 
-        // Client type select change handler
-        clientTypeSelect.addEventListener('change', function() {
-            selectedClientType = this.value ? clientTypes.find(ct => ct.id == this.value) : null;
-            console.log('Выбран тип клиента:', selectedClientType);
-        });
-
-        // Filter and display users based on search
-        function filterUsers(searchTerm) {
+        // Filter and display users based on search (for modal)
+        function filterModalUsers(searchTerm) {
             const filtered = users.filter(user => 
                 user.name.toLowerCase().includes(searchTerm.toLowerCase())
             );
             
-            displayUsers(filtered);
+            displayModalUsers(filtered);
         }
 
-        // Display users in dropdown
-        function displayUsers(userList) {
-            userDropdown.innerHTML = '';
+        // Display users in modal dropdown
+        function displayModalUsers(userList) {
+            modalUserDropdown.innerHTML = '';
             
             if (userList.length === 0) {
-                userDropdown.innerHTML = '<div class="dropdown-item">Пользователи не найдены</div>';
+                modalUserDropdown.innerHTML = '<div class="dropdown-item">Пользователи не найдены</div>';
             } else {
                 userList.forEach(user => {
                     const item = document.createElement('div');
                     item.className = 'dropdown-item';
                     item.textContent = user.name;
-                    item.addEventListener('click', () => selectUser(user));
-                    userDropdown.appendChild(item);
+                    item.addEventListener('click', () => selectModalUser(user));
+                    modalUserDropdown.appendChild(item);
                 });
             }
             
-            userDropdown.style.display = 'block';
+            modalUserDropdown.style.display = 'block';
         }
 
-        // Select user and set region
-        function selectUser(user) {
-            selectedUser = user;
-            userInput.value = user.name;
-            regionDisplay.value = user.region;
-            regionDisplay.classList.add('filled');
-            userDropdown.style.display = 'none';
+        // Select user in modal and set region
+        function selectModalUser(user) {
+            modalSelectedUser = user;
+            modalUserInput.value = user.name;
+            modalRegionDisplay.value = user.region;
+            modalRegionDisplay.classList.add('filled');
+            modalUserDropdown.style.display = 'none';
             
-            console.log('Выбран пользователь:', user.name, 'Регион:', user.region);
+            console.log('Выбран пользователь в модале:', user.name, 'Регион:', user.region);
         }
 
-        // Event listeners
-        userInput.addEventListener('input', function() {
+        // Modal user input event listeners
+        modalUserInput.addEventListener('input', function() {
             const searchTerm = this.value.trim();
             
             if (searchTerm.length > 0) {
-                filterUsers(searchTerm);
+                filterModalUsers(searchTerm);
             } else {
-                userDropdown.style.display = 'none';
-                regionDisplay.value = '';
-                regionDisplay.classList.remove('filled');
-                selectedUser = null;
+                modalUserDropdown.style.display = 'none';
+                modalRegionDisplay.value = '';
+                modalRegionDisplay.classList.remove('filled');
+                modalSelectedUser = null;
             }
         });
 
-        userInput.addEventListener('focus', function() {
+        modalUserInput.addEventListener('focus', function() {
             if (this.value.trim().length > 0) {
-                filterUsers(this.value.trim());
+                filterModalUsers(this.value.trim());
             }
         });
 
@@ -266,23 +282,18 @@
         document.addEventListener('click', function(event) {
             const searchableSelect = event.target.closest('.searchable-select');
             if (!searchableSelect) {
-                userDropdown.style.display = 'none';
-            } else {
-                // Close the dropdown that's not being interacted with
-                if (!searchableSelect.contains(userInput)) {
-                    userDropdown.style.display = 'none';
-                }
+                modalUserDropdown.style.display = 'none';
             }
         });
 
         // Clear selection when input is manually cleared
-        userInput.addEventListener('keydown', function(event) {
+        modalUserInput.addEventListener('keydown', function(event) {
             if (event.key === 'Backspace' || event.key === 'Delete') {
                 setTimeout(() => {
                     if (this.value.trim() === '') {
-                        regionDisplay.value = '';
-                        regionDisplay.classList.remove('filled');
-                        selectedUser = null;
+                        modalRegionDisplay.value = '';
+                        modalRegionDisplay.classList.remove('filled');
+                        modalSelectedUser = null;
                     }
                 }, 10);
             }
@@ -311,9 +322,107 @@
             });
         }
         
-        // Populate all existing category dropdowns
+        // Populate all existing category dropdowns and setup listeners
         document.querySelectorAll('.category-select').forEach(select => {
             populateCategorySelect(select);
+            setupCategoryChangeListener(select);
+        });
+        
+        // Populate karniz dropdowns
+        function populateKarnizSelect(selectElement) {
+            // Clear existing options
+            selectElement.innerHTML = '';
+            
+            // Add empty placeholder option
+            const placeholderOption = document.createElement('option');
+            placeholderOption.value = '';
+            placeholderOption.textContent = 'Выберите...';
+            selectElement.appendChild(placeholderOption);
+            
+            // Add static "mata" option
+            const mataOption = document.createElement('option');
+            mataOption.value = 'mata';
+            mataOption.textContent = 'Dine mata';
+            selectElement.appendChild(mataOption);
+            
+            // Add static "Karniz komplekt" option as second
+            const komplektOption = document.createElement('option');
+            komplektOption.value = 'karniz_komplekt';
+            komplektOption.textContent = 'Karniz komplekt';
+            selectElement.appendChild(komplektOption);
+            
+            // Add karniz options from database
+            karnizOptions.forEach(karniz => {
+                const option = document.createElement('option');
+                option.value = karniz.id;
+                option.textContent = karniz.name;
+                selectElement.appendChild(option);
+            });
+        }
+        
+        // Handle karniz selection change to disable/enable fields
+        function handleKarnizChange(karnizSelect) {
+            const row = karnizSelect.closest('tr');
+            const categorySelect = row.querySelector('.category-select');
+            const kodRenkInput = row.querySelector('.kodrenk-search');
+            const selpeSelect = row.querySelector('.selpe-select');
+            
+            if (karnizSelect.value === 'karniz_komplekt') {
+                // Disable category, kod renk, and selpe
+                categorySelect.disabled = true;
+                categorySelect.value = '';
+                kodRenkInput.disabled = true;
+                kodRenkInput.value = '';
+                selpeSelect.disabled = true;
+                selpeSelect.value = '';
+                
+                // Add visual styling for disabled state
+                categorySelect.style.backgroundColor = '#f0f0f0';
+                kodRenkInput.style.backgroundColor = '#f0f0f0';
+                selpeSelect.style.backgroundColor = '#f0f0f0';
+            } else {
+                // Enable category, kod renk, and selpe
+                categorySelect.disabled = false;
+                kodRenkInput.disabled = false;
+                selpeSelect.disabled = false;
+                
+                // Remove visual styling
+                categorySelect.style.backgroundColor = '';
+                kodRenkInput.style.backgroundColor = '';
+                selpeSelect.style.backgroundColor = '';
+            }
+        }
+        
+        // Setup karniz change event listener
+        function setupKarnizChangeListener(selectElement) {
+            selectElement.addEventListener('change', function() {
+                handleKarnizChange(this);
+            });
+        }
+        
+        // Populate selpe dropdowns
+        function populateSelpeSelect(selectElement) {
+            // Clear existing options except the first one
+            selectElement.innerHTML = '<option value="">-</option>';
+            
+            // Add selpe options from database
+            selpeOptions.forEach(selpe => {
+                const option = document.createElement('option');
+                option.value = selpe.id;
+                option.textContent = selpe.name;
+                selectElement.appendChild(option);
+            });
+        }
+        
+        // Populate all existing karniz dropdowns and setup listeners
+        document.querySelectorAll('.karniz-select').forEach(select => {
+            populateKarnizSelect(select);
+            setupKarnizChangeListener(select);
+        });
+        
+        // Populate all existing selpe dropdowns
+        document.querySelectorAll('.selpe-select').forEach(select => {
+            populateSelpeSelect(select);
         });
 
         // Close modal when clicking outside
@@ -329,9 +438,17 @@
                 const searchTerm = this.value.trim().toLowerCase();
                 
                 if (searchTerm.length > 0) {
-                    const filtered = kodRenks.filter(kr => 
-                        kr.code.toLowerCase().includes(searchTerm)
-                    );
+                    // Get selected category from the same row
+                    const row = this.closest('tr');
+                    const categorySelect = row.querySelector('.category-select');
+                    const selectedCategoryId = categorySelect.value ? parseInt(categorySelect.value) : null;
+                    
+                    // Filter by search term and category
+                    const filtered = kodRenks.filter(kr => {
+                        const matchesSearch = kr.code.toLowerCase().includes(searchTerm);
+                        const matchesCategory = !selectedCategoryId || kr.category_id === selectedCategoryId;
+                        return matchesSearch && matchesCategory;
+                    });
                     displayKodRenkOptions(dropdown, filtered, input);
                 } else {
                     dropdown.style.display = 'none';
@@ -341,11 +458,30 @@
             input.addEventListener('focus', function() {
                 if (this.value.trim().length > 0) {
                     const searchTerm = this.value.trim().toLowerCase();
-                    const filtered = kodRenks.filter(kr => 
-                        kr.code.toLowerCase().includes(searchTerm)
-                    );
+                    
+                    // Get selected category from the same row
+                    const row = this.closest('tr');
+                    const categorySelect = row.querySelector('.category-select');
+                    const selectedCategoryId = categorySelect.value ? parseInt(categorySelect.value) : null;
+                    
+                    // Filter by search term and category
+                    const filtered = kodRenks.filter(kr => {
+                        const matchesSearch = kr.code.toLowerCase().includes(searchTerm);
+                        const matchesCategory = !selectedCategoryId || kr.category_id === selectedCategoryId;
+                        return matchesSearch && matchesCategory;
+                    });
                     displayKodRenkOptions(dropdown, filtered, input);
                 }
+            });
+        }
+        
+        // Setup category change listener to clear kod renk when category changes
+        function setupCategoryChangeListener(categorySelect) {
+            categorySelect.addEventListener('change', function() {
+                const row = this.closest('tr');
+                const kodRenkInput = row.querySelector('.kodrenk-search');
+                // Clear kod renk input when category changes
+                kodRenkInput.value = '';
             });
         }
 
@@ -358,7 +494,7 @@
                 kodRenkList.forEach(kr => {
                     const item = document.createElement('div');
                     item.className = 'kodrenk-item';
-                    item.textContent = kr.code + ' (Price: ' + kr.price + ')';
+                    item.textContent = kr.code;
                     item.addEventListener('click', () => {
                         input.value = kr.code;
                         dropdown.style.display = 'none';
@@ -465,15 +601,15 @@
                 switch(currentWerandaType) {
                     case '2-bolek':
                         rowCount = 2;
-                        rowLabels = ['a', 'b'];
+                        rowLabels = ['2-bolek cep', '2-bolek sag'];
                         break;
                     case '3-bolek':
                         rowCount = 3;
-                        rowLabels = ['a', 'b', 'c'];
+                        rowLabels = ['3-bolek cep', '3-bolek orta', '3-bolek sag'];
                         break;
                     case '4-bolek':
                         rowCount = 4;
-                        rowLabels = ['a', 'b', 'c', 'd'];
+                        rowLabels = ['4-bolek cep', '4-bolek cep orta', '4-bolek sag orta', '4-bolek sag'];
                         break;
                 }
             }
@@ -487,7 +623,7 @@
             
             // Add rows based on count
             for (let i = 0; i < rowCount; i++) {
-                addSingleRow(tableBody, newRowNumber, rowLabels[i], currentGroupId);
+                addSingleRow(tableBody, newRowNumber, rowLabels[i], currentGroupId, rowLabels);
             }
             
             if (isWerandaRow && currentWerandaType) {
@@ -502,7 +638,7 @@
         }
         
         // Helper function to add a single row
-        function addSingleRow(tableBody, rowNumber, label, groupId) {
+        function addSingleRow(tableBody, rowNumber, label, groupId, allLabels = []) {
             const newRow = document.createElement('tr');
             newRow.className = 'table-row';
             newRow.setAttribute('data-row-number', rowNumber);
@@ -520,7 +656,14 @@
             }
             
             // Display row number with label if it's a weranda sub-row
-            const displayNumber = label ? `${rowNumber}${label}` : rowNumber;
+            // Extract simple letter suffix from label for display (a, b, c, d)
+            let displayNumber = rowNumber;
+            if (label && allLabels.length > 0) {
+                // Map label to simple letter: first item = a, second = b, etc.
+                const labelIndex = allLabels.indexOf(label);
+                const letterSuffix = String.fromCharCode(97 + labelIndex); // 97 = 'a'
+                displayNumber = `${rowNumber}${letterSuffix}`;
+            }
             
             newRow.innerHTML = `
                 <td class="row-number">${displayNumber}</td>
@@ -529,10 +672,8 @@
                 <td>
                     <select class="table-select karniz-select">
                         <option value="">Выберите...</option>
-                        <option value="option1">Опция 1</option>
-                        <option value="option2">Опция 2</option>
-                        <option value="option3">Опция 3</option>
-                        <option value="option4">Опция 4</option>
+                        <option value="mata">Dine mata</option>
+                        <option value="karniz_komplekt">Karniz komplekt</option>
                     </select>
                 </td>
                 <td>
@@ -549,13 +690,9 @@
                 <td>
                     <select class="table-select selpe-select">
                         <option value="">-</option>
-                        <option value="1-gat">1 gat</option>
-                        <option value="2-gat">2 gat</option>
-                        <option value="3-gat">3 gat</option>
                     </select>
                 </td>
                 <td><input type="text" class="table-input" placeholder="Примечание"></td>
-                <td><input type="number" class="table-input" value="1" min="1" step="1"></td>
                 <td>
                     <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
                 </td>
@@ -568,15 +705,24 @@
             const newKodRenkDropdown = newRow.querySelector('.kodrenk-dropdown');
             setupKodRenkSearch(newKodRenkInput, newKodRenkDropdown);
             
-            // Populate category dropdown for new row
+            // Populate category dropdown for new row and setup listener
             const newCategorySelect = newRow.querySelector('.category-select');
             populateCategorySelect(newCategorySelect);
+            setupCategoryChangeListener(newCategorySelect);
+            
+            // Populate karniz dropdown for new row and setup listener
+            const newKarnizSelect = newRow.querySelector('.karniz-select');
+            populateKarnizSelect(newKarnizSelect);
+            setupKarnizChangeListener(newKarnizSelect);
+            
+            // Populate selpe dropdown for new row
+            const newSelpeSelect = newRow.querySelector('.selpe-select');
+            populateSelpeSelect(newSelpeSelect);
             
             // If it's a weranda row, add visual indicator in Bellik field
             if (isWerandaRow && currentWerandaType) {
                 const bellikInput = newRow.querySelector('td:nth-child(8) input');
-                const labelText = label ? ` - ${label}` : '';
-                bellikInput.value = `Weranda (${currentWerandaType}${labelText})`;
+                bellikInput.value = label ? `Weranda(${label})` : `Weranda(${currentWerandaType})`;
                 bellikInput.style.fontWeight = '600';
                 bellikInput.style.color = '#667eea';
             }
@@ -644,8 +790,61 @@
             console.log('Строка удалена');
         }
 
-        // Function to add new table
+        // Function to add new table - opens modal for user data
         function addNewTable() {
+            // Open modal to get user data for new table
+            openUserDataModalForNewTable();
+        }
+        
+        // Open user data modal for new table
+        function openUserDataModalForNewTable() {
+            const modal = document.getElementById('user-data-modal');
+            modal.classList.add('show');
+            modal.setAttribute('data-new-table', 'true');
+        }
+        
+        // Modified confirmUserData to handle both first table and new tables
+        function confirmUserData() {
+            if (!modalSelectedUser) {
+                alert('Пожалуйста, выберите пользователя!');
+                return;
+            }
+            
+            const modal = document.getElementById('user-data-modal');
+            const isNewTable = modal.getAttribute('data-new-table') === 'true';
+            
+            if (isNewTable) {
+                // Creating a new table
+                modal.removeAttribute('data-new-table');
+                actuallyAddNewTable();
+            } else {
+                // Creating first table
+                const tableNumber = 1;
+                currentTableUserData[tableNumber] = {
+                    user: modalSelectedUser,
+                    region: modalRegionDisplay.value
+                };
+                
+                // Hide initial button
+                document.getElementById('initial-add-container').style.display = 'none';
+                
+                // Show tables wrapper
+                document.getElementById('tables-wrapper').style.display = 'block';
+                
+                // Show first table
+                const firstTable = document.querySelector('.table-container[data-table-number="1"]');
+                firstTable.style.display = 'block';
+                
+                // Add user data display to table
+                addUserDataToTable(firstTable, tableNumber);
+                
+                closeUserDataModal();
+                console.log('Первый заказ создан с данными пользователя');
+            }
+        }
+        
+        // Actually add new table with user data
+        function actuallyAddNewTable() {
             const mainContainer = document.querySelector('.container');
             const allTableContainers = document.querySelectorAll('.table-container');
             const lastTableContainer = allTableContainers[allTableContainers.length - 1];
@@ -653,6 +852,12 @@
             // Get the next table number
             const lastTableNumber = parseInt(lastTableContainer.getAttribute('data-table-number'));
             const newTableNumber = lastTableNumber + 1;
+            
+            // Store user data for this new table
+            currentTableUserData[newTableNumber] = {
+                user: modalSelectedUser,
+                region: modalRegionDisplay.value
+            };
             
             // Remove buttons from current table
             const currentButtons = lastTableContainer.querySelector('.table-buttons');
@@ -678,9 +883,7 @@
             // Reset the first row's inputs
             const inputs = newTableBody.querySelectorAll('input');
             inputs.forEach(input => {
-                if (input.type === 'number' && input.closest('td:nth-child(9)')) {
-                    input.value = '1'; // Sany field default
-                } else if (input.type === 'number') {
+                if (input.type === 'number') {
                     input.value = '';
                 } else {
                     input.value = '';
@@ -710,12 +913,22 @@
                 setupKodRenkSearch(input, dropdown);
             });
             
+            // Setup category change listeners for the new table
+            const categorySelects = newTableContainer.querySelectorAll('.category-select');
+            categorySelects.forEach((select) => {
+                setupCategoryChangeListener(select);
+            });
+            
             // Add buttons back to the new table
             newTableContainer.appendChild(currentButtons);
             
             // Insert the new table after the last table container
             lastTableContainer.parentNode.insertBefore(newTableContainer, lastTableContainer.nextSibling);
             
+            // Add user data display to new table
+            addUserDataToTable(newTableContainer, newTableNumber);
+            
+            closeUserDataModal();
             console.log('Добавлена новая таблица: Заказ №' + newTableNumber);
         }
 
@@ -755,63 +968,448 @@
             console.log('Удалена таблица: Заказ №' + tableNumber);
         }
         
-        // Function to download data as Word document
-        function downloadAsWord() {
-            console.log('Starting download...');
+        // Function to download data as Excel file
+        function downloadAsExcel() {
+            console.log('Starting Excel download...');
             
             try {
                 // Collect all form data
                 const formData = collectAllFormData();
                 console.log('Form data collected:', formData);
                 
-                // Create Word document content
-                const wordContent = generateWordContent(formData);
-                console.log('Word content generated');
+                // Create workbook
+                const wb = XLSX.utils.book_new();
                 
-                // Create Blob with UTF-8 BOM for proper encoding
-                const bom = '\ufeff';
-                const blob = new Blob([bom + wordContent], {
-                    type: 'application/msword;charset=utf-8'
+                // Combine all orders into one sheet with page breaks
+                const allOrdersData = [];
+                const pageBreaks = [];
+                let currentRow = 0;
+                
+                formData.orders.forEach((order, index) => {
+                    const orderData = generateExcelSheetData(order, formData);
+                    
+                    // Add order data
+                    allOrdersData.push(...orderData);
+                    currentRow += orderData.length;
+                    
+                    // Add page break after each order (except the last one)
+                    if (index < formData.orders.length - 1) {
+                        pageBreaks.push(currentRow);
+                        // Add spacing between orders
+                        allOrdersData.push([]);
+                        allOrdersData.push([]);
+                        currentRow += 2;
+                    }
                 });
                 
-                console.log('Blob created, size:', blob.size);
+                // Create worksheet from combined data
+                const ws = XLSX.utils.aoa_to_sheet(allOrdersData);
                 
-                // Create download link
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `Sargyt_${new Date().toISOString().split('T')[0]}.doc`;
-                link.style.display = 'none';
+                // Set column widths
+                ws['!cols'] = [
+                    {wch: 10}, // №
+                    {wch: 12}, // Ini
+                    {wch: 12}, // Boyy
+                    {wch: 18}, // Karniz
+                    {wch: 18}, // Kod Renk
+                    {wch: 15}, // Selpe
+                    {wch: 25}  // Bellik
+                ];
                 
-                // Append, click, and remove
-                document.body.appendChild(link);
-                console.log('Link appended to body');
+                // Set page breaks
+                ws['!rows'] = ws['!rows'] || [];
+                pageBreaks.forEach(breakRow => {
+                    ws['!rows'][breakRow] = ws['!rows'][breakRow] || {};
+                    ws['!rows'][breakRow].pageBreak = true;
+                });
                 
-                link.click();
-                console.log('Link clicked');
+                // Apply styling to the combined sheet
+                applyExcelStylingCombined(ws, formData.orders);
                 
-                // Clean up after a delay
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                    console.log('Cleanup completed');
-                }, 100);
+                // Merge cells for order titles
+                ws['!merges'] = [];
+                let rowOffset = 0;
+                formData.orders.forEach((order, index) => {
+                    // Merge title row across all columns
+                    ws['!merges'].push({
+                        s: { r: rowOffset, c: 0 },
+                        e: { r: rowOffset, c: 6 }
+                    });
+                    
+                    const userData = currentTableUserData[order.orderNumber];
+                    const titleRows = 2; // Title + empty
+                    const userRows = userData ? 2 : 0; // User info row + empty (now on one line)
+                    const headerRow = 1;
+                    const dataRows = order.rows.length;
+                    const spacingRows = index < formData.orders.length - 1 ? 2 : 0;
+                    
+                    rowOffset += titleRows + userRows + headerRow + dataRows + spacingRows;
+                });
                 
-                alert('Word документ скачан!');
+                // Set print options for better page layout
+                ws['!print'] = {
+                    orientation: 'landscape',
+                    margins: {
+                        left: 0.25,
+                        right: 0.25,
+                        top: 0.75,
+                        bottom: 0.75,
+                        header: 0.3,
+                        footer: 0.3
+                    },
+                    fitToPage: true,
+                    fitToWidth: 1,
+                    fitToHeight: 0
+                };
+                
+                // Add sheet with date in name
+                const currentDate = new Date().toISOString().split('T')[0];
+                const sheetName = `Orders ${currentDate}`;
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                
+                // Generate file and download with styling support
+                const fileName = `Sargyt_${currentDate}.xlsx`;
+                XLSX.writeFile(wb, fileName, {
+                    bookType: 'xlsx',
+                    bookSST: false,
+                    type: 'binary',
+                    cellStyles: true
+                });
+                
+                console.log('Excel file downloaded with styling');
+                alert('Excel файл скачан!');
                 
             } catch (error) {
-                console.error('Error downloading Word document:', error);
+                console.error('Error downloading Excel file:', error);
                 alert('Ошибка при скачивании: ' + error.message);
             }
+        }
+        
+        // Apply beautiful minimalistic styling to combined Excel sheet
+        function applyExcelStylingCombined(ws, orders) {
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            let currentRow = 0;
+            
+            orders.forEach((order, orderIndex) => {
+                const userData = currentTableUserData[order.orderNumber];
+                let headerRowIndex = currentRow;
+                
+                // Style order title
+                const titleCellRef = XLSX.utils.encode_cell({r: currentRow, c: 0});
+                if (ws[titleCellRef]) {
+                    ws[titleCellRef].s = {
+                        font: {
+                            name: 'Calibri',
+                            sz: 14,
+                            bold: true,
+                            color: { rgb: '1A1A1A' }
+                        },
+                        alignment: {
+                            vertical: 'center',
+                            horizontal: 'center'
+                        },
+                        fill: {
+                            fgColor: { rgb: 'E8F5E9' }
+                        },
+                        border: {
+                            bottom: { style: 'medium', color: { rgb: '4CAF50' } }
+                        }
+                    };
+                    ws['!rows'] = ws['!rows'] || [];
+                    ws['!rows'][currentRow] = { hpt: 28 };
+                }
+                currentRow += 1; // Title row
+                currentRow += 1; // Empty row after title
+                headerRowIndex = currentRow;
+                
+                // Style user info section if exists (now on one line)
+                if (userData) {
+                    // User info is now in one row: User: | Name | empty | Region: | Region name
+                    for (let col = 0; col < 5; col++) {
+                        const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
+                        if (ws[cellRef]) {
+                            ws[cellRef].s = {
+                                font: {
+                                    name: 'Calibri',
+                                    sz: 11,
+                                    bold: col === 0 || col === 3, // Bold for "User:" and "Region:" labels
+                                    color: { rgb: '2C3E50' }
+                                },
+                                alignment: {
+                                    vertical: 'center',
+                                    horizontal: (col === 0 || col === 3) ? 'right' : 'left'
+                                },
+                                fill: {
+                                    fgColor: { rgb: 'F8F9FA' }
+                                },
+                                border: {
+                                    top: { style: 'thin', color: { rgb: '000000' } },
+                                    bottom: { style: 'thin', color: { rgb: '000000' } },
+                                    left: { style: 'thin', color: { rgb: '000000' } },
+                                    right: { style: 'thin', color: { rgb: '000000' } }
+                                }
+                            };
+                        }
+                    }
+                    currentRow += 1; // User info row
+                    currentRow += 1; // Empty row
+                    headerRowIndex = currentRow;
+                }
+                
+                // Style header row
+                for (let col = range.s.c; col <= range.e.c; col++) {
+                    const cellRef = XLSX.utils.encode_cell({r: headerRowIndex, c: col});
+                    if (ws[cellRef]) {
+                        ws[cellRef].s = {
+                            font: {
+                                name: 'Calibri',
+                                sz: 12,
+                                bold: true,
+                                color: { rgb: 'FFFFFF' }
+                            },
+                            fill: {
+                                fgColor: { rgb: '495057' }
+                            },
+                            alignment: {
+                                vertical: 'center',
+                                horizontal: 'center'
+                            },
+                            border: {
+                                top: { style: 'thin', color: { rgb: '000000' } },
+                                bottom: { style: 'medium', color: { rgb: '000000' } },
+                                left: { style: 'thin', color: { rgb: '000000' } },
+                                right: { style: 'thin', color: { rgb: '000000' } }
+                            }
+                        };
+                    }
+                }
+                
+                // Set row height for header (once, outside column loop)
+                ws['!rows'] = ws['!rows'] || [];
+                ws['!rows'][headerRowIndex] = { hpt: 25 };
+                
+                currentRow += 1; // Header row
+                
+                // Style data rows
+                const dataRowCount = order.rows.length;
+                for (let i = 0; i < dataRowCount; i++) {
+                    const row = currentRow + i;
+                    const isEven = i % 2 === 0;
+                    const rowData = [];
+                    
+                    // Get row data to check for weranda
+                    for (let col = range.s.c; col <= range.e.c; col++) {
+                        const cellRef = XLSX.utils.encode_cell({r: row, c: col});
+                        if (ws[cellRef]) {
+                            rowData.push(ws[cellRef].v);
+                        }
+                    }
+                    
+                    const isWerandaRow = rowData[7] && String(rowData[7]).includes('Weranda');
+                    
+                    for (let col = range.s.c; col <= range.e.c; col++) {
+                        const cellRef = XLSX.utils.encode_cell({r: row, c: col});
+                        if (ws[cellRef]) {
+                            ws[cellRef].s = {
+                                font: {
+                                    name: 'Calibri',
+                                    sz: 11,
+                                    color: { rgb: '2C3E50' }
+                                },
+                                fill: {
+                                    fgColor: { 
+                                        rgb: isWerandaRow ? 'E3F2FD' :
+                                             isEven ? 'FFFFFF' : 'F8F9FA'
+                                    }
+                                },
+                                alignment: {
+                                    vertical: 'center',
+                                    horizontal: col === 0 ? 'center' :
+                                              col === 1 || col === 2 ? 'right' :
+                                              'left'
+                                },
+                                border: {
+                                    top: { style: 'thin', color: { rgb: '000000' } },
+                                    bottom: { style: 'thin', color: { rgb: '000000' } },
+                                    left: { style: 'thin', color: { rgb: '000000' } },
+                                    right: { style: 'thin', color: { rgb: '000000' } }
+                                },
+                                numFmt: col === 1 || col === 2 ? '0.00' : '@'
+                            };
+                            // Set row height for data
+                            ws['!rows'] = ws['!rows'] || [];
+                            ws['!rows'][row] = ws['!rows'][row] || { hpt: 20 };
+                        }
+                    }
+                }
+                
+                currentRow += dataRowCount;
+                
+                // Skip empty spacing rows between orders
+                if (orderIndex < orders.length - 1) {
+                    currentRow += 2;
+                }
+            });
+        }
+        
+        // Apply beautiful minimalistic styling to Excel sheet
+        function applyExcelStyling(ws, order) {
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            
+            // Determine header row (user info or not)
+            const userData = currentTableUserData[order.orderNumber];
+            const headerRowIndex = userData ? 3 : 0; // Row with column headers
+            
+            // Style for user info section (if exists)
+            if (userData) {
+                for (let row = 0; row < 2; row++) {
+                    for (let col = 0; col <= 1; col++) {
+                        const cellRef = XLSX.utils.encode_cell({r: row, c: col});
+                        if (ws[cellRef]) {
+                            ws[cellRef].s = {
+                                font: {
+                                    name: 'Calibri',
+                                    sz: 11,
+                                    bold: col === 0,
+                                    color: { rgb: '2C3E50' }
+                                },
+                                alignment: {
+                                    vertical: 'center',
+                                    horizontal: col === 0 ? 'right' : 'left'
+                                },
+                                fill: {
+                                    fgColor: { rgb: 'F8F9FA' }
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+            
+            // Style header row with minimalistic design
+            for (let col = range.s.c; col <= range.e.c; col++) {
+                const cellRef = XLSX.utils.encode_cell({r: headerRowIndex, c: col});
+                if (ws[cellRef]) {
+                    ws[cellRef].s = {
+                        font: {
+                            name: 'Calibri',
+                            sz: 12,
+                            bold: true,
+                            color: { rgb: 'FFFFFF' }
+                        },
+                        fill: {
+                            fgColor: { rgb: '495057' } // Minimal dark gray
+                        },
+                        alignment: {
+                            vertical: 'center',
+                            horizontal: 'center'
+                        },
+                        border: {
+                            top: { style: 'thin', color: { rgb: '000000' } },
+                            bottom: { style: 'medium', color: { rgb: '000000' } },
+                            left: { style: 'thin', color: { rgb: '000000' } },
+                            right: { style: 'thin', color: { rgb: '000000' } }
+                        }
+                    };
+                }
+            }
+            
+            // Style data rows with alternating subtle colors
+            for (let row = headerRowIndex + 1; row <= range.e.r; row++) {
+                const isEven = (row - headerRowIndex) % 2 === 0;
+                const rowData = [];
+                
+                // Check if this is a weranda row
+                for (let col = range.s.c; col <= range.e.c; col++) {
+                    const cellRef = XLSX.utils.encode_cell({r: row, c: col});
+                    if (ws[cellRef]) {
+                        rowData.push(ws[cellRef].v);
+                    }
+                }
+                
+                const isWerandaRow = rowData[7] && String(rowData[7]).includes('Weranda');
+                
+                for (let col = range.s.c; col <= range.e.c; col++) {
+                    const cellRef = XLSX.utils.encode_cell({r: row, c: col});
+                    if (ws[cellRef]) {
+                        ws[cellRef].s = {
+                            font: {
+                                name: 'Calibri',
+                                sz: 11,
+                                color: { rgb: '2C3E50' }
+                            },
+                            fill: {
+                                fgColor: { 
+                                    rgb: isWerandaRow ? 'E3F2FD' : // Light blue for weranda
+                                         isEven ? 'FFFFFF' : 'F8F9FA' // Alternating white/light gray
+                                }
+                            },
+                            alignment: {
+                                vertical: 'center',
+                                horizontal: col === 0 ? 'center' : // Center row number
+                                          col === 1 || col === 2 ? 'right' : // Right align numbers
+                                          'left'
+                            },
+                            border: {
+                                top: { style: 'thin', color: { rgb: '000000' } },
+                                bottom: { style: 'thin', color: { rgb: '000000' } },
+                                left: { style: 'thin', color: { rgb: '000000' } },
+                                right: { style: 'thin', color: { rgb: '000000' } }
+                            },
+                            numFmt: col === 1 || col === 2 ? '0.00' : '@' // Format numbers with 2 decimals
+                        };
+                    }
+                }
+            }
+            
+            // Set row heights for better spacing
+            ws['!rows'] = [];
+            for (let i = 0; i <= range.e.r; i++) {
+                if (i === headerRowIndex) {
+                    ws['!rows'][i] = { hpt: 25 }; // Header row height
+                } else {
+                    ws['!rows'][i] = { hpt: 20 }; // Data row height
+                }
+            }
+        }
+        
+        // Generate Excel sheet data for an order
+        function generateExcelSheetData(order, formData) {
+            const data = [];
+            
+            // Add order title
+            data.push([`ЗАКАЗ №${order.orderNumber}`]);
+            data.push([]);
+            
+            // Add header info on one line
+            const userData = currentTableUserData[order.orderNumber];
+            if (userData) {
+                data.push(['User:', userData.user.name, '', 'Region:', userData.region]);
+                data.push([]);
+            }
+            
+            // Add table headers
+            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik']);
+            
+            // Add rows
+            order.rows.forEach(row => {
+                data.push([
+                    row.number,
+                    row.en,
+                    row.boy,
+                    row.karniz,
+                    row.kodRenk,
+                    row.selpe,
+                    row.bellik
+                ]);
+            });
+            
+            return data;
         }
         
         // Collect all form data from the page
         function collectAllFormData() {
             const data = {
-                client: document.getElementById('user-select').value,
-                clientType: document.getElementById('client-type-select').value,
-                currency: document.getElementById('currency-select').value,
-                date: document.getElementById('date-input').value,
                 orders: []
             };
             
@@ -832,12 +1430,11 @@
                         number: row.querySelector('.row-number').textContent,
                         en: row.querySelector('td:nth-child(2) input').value,
                         boy: row.querySelector('td:nth-child(3) input').value,
-                        karniz: row.querySelector('.karniz-select').value,
+                        karniz: row.querySelector('.karniz-select').selectedOptions[0]?.text || '',
                         category: row.querySelector('.category-select').selectedOptions[0]?.text || '',
                         kodRenk: row.querySelector('.kodrenk-search').value,
-                        selpe: row.querySelector('.selpe-select').value,
+                        selpe: row.querySelector('.selpe-select').selectedOptions[0]?.text || '',
                         bellik: row.querySelector('td:nth-child(8) input').value,
-                        sany: row.querySelector('td:nth-child(9) input').value,
                         isWeranda: row.getAttribute('data-weranda') === 'true',
                         werandaType: row.getAttribute('data-weranda-type') || '',
                         werandaLabel: row.getAttribute('data-weranda-label') || ''
@@ -850,107 +1447,6 @@
             });
             
             return data;
-        }
-        
-        // Generate Word document HTML content
-        function generateWordContent(data) {
-            // Get client name from select
-            const clientSelect = document.getElementById('user-select');
-            const clientName = clientSelect.selectedOptions[0]?.text || 'Не выбран';
-            
-            const clientTypeSelect = document.getElementById('client-type-select');
-            const clientTypeName = clientTypeSelect.selectedOptions[0]?.text || 'Не выбран';
-            
-            const currencySelect = document.getElementById('currency-select');
-            const currencyName = currencySelect.selectedOptions[0]?.text || 'Не выбрана';
-            
-            let html = `
-<html xmlns:o='urn:schemas-microsoft-com:office:office' 
-      xmlns:w='urn:schemas-microsoft-com:office:word' 
-      xmlns='http://www.w3.org/TR/REC-html40'>
-<head>
-    <meta charset='utf-8'>
-    <title>Sargyt</title>
-    <style>
-        body { font-family: 'Times New Roman', serif; font-size: 12pt; }
-        h1 { text-align: center; font-size: 18pt; margin-bottom: 20px; }
-        h2 { font-size: 14pt; margin-top: 20px; margin-bottom: 10px; }
-        .info-section { margin-bottom: 20px; }
-        .info-row { margin-bottom: 5px; }
-        .info-label { font-weight: bold; display: inline-block; width: 150px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 10px; margin-bottom: 20px; }
-        th, td { border: 1px solid black; padding: 5px; text-align: left; font-size: 10pt; }
-        th { background-color: #f0f0f0; font-weight: bold; }
-        .weranda-row { background-color: #e8f4ff; }
-        .page-break { page-break-after: always; }
-    </style>
-</head>
-<body>
-    <h1>Заказ на производство</h1>
-    
-    <div class='info-section'>
-        <div class='info-row'><span class='info-label'>Müşderi:</span> ${clientName}</div>
-        <div class='info-row'><span class='info-label'>Müşderi görnüşi:</span> ${clientTypeName}</div>
-        <div class='info-row'><span class='info-label'>Walýuta:</span> ${currencyName}</div>
-        <div class='info-row'><span class='info-label'>Sene:</span> ${data.date}</div>
-    </div>
-`;
-            
-            // Add each order table
-            data.orders.forEach((order, index) => {
-                html += `
-    <h2>Sargyt №${order.orderNumber}</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>№</th>
-                <th>En</th>
-                <th>Boý</th>
-                <th>Karniz</th>
-                <th>Kategoriýa</th>
-                <th>Kod Renk</th>
-                <th>Şelpe</th>
-                <th>Bellik</th>
-                <th>Sany</th>
-            </tr>
-        </thead>
-        <tbody>
-`;
-                
-                order.rows.forEach(row => {
-                    const rowClass = row.isWeranda ? "class='weranda-row'" : '';
-                    html += `
-            <tr ${rowClass}>
-                <td>${row.number}</td>
-                <td>${row.en}</td>
-                <td>${row.boy}</td>
-                <td>${row.karniz}</td>
-                <td>${row.category}</td>
-                <td>${row.kodRenk}</td>
-                <td>${row.selpe}</td>
-                <td>${row.bellik}</td>
-                <td>${row.sany}</td>
-            </tr>
-`;
-                });
-                
-                html += `
-        </tbody>
-    </table>
-`;
-                
-                // Add page break between orders (except after the last one)
-                if (index < data.orders.length - 1) {
-                    html += `<div class='page-break'></div>`;
-                }
-            });
-            
-            html += `
-</body>
-</html>
-`;
-            
-            return html;
         }
     </script>
 </body>

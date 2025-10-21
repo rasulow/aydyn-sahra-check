@@ -25,22 +25,6 @@ class Region(models.Model):
         verbose_name = "Welayat"
         verbose_name_plural = "Welayatlar"
 
-
-class Client(models.Model):
-    name = models.CharField(max_length=100)
-    region = models.ForeignKey(Region, on_delete=models.CASCADE)
-    wallet = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = "Musderi"
-        verbose_name_plural = "Musderiler"
-
-
 class ClientType(models.Model):
     type = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -54,24 +38,34 @@ class ClientType(models.Model):
         verbose_name_plural = "Musderi gornusleri"
 
 
-class Currency(models.Model):
-    kod = models.CharField(max_length=100, default="TMT")
+class Client(models.Model):
+    name = models.CharField(max_length=100)
+    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    wallet = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    client_type = models.ForeignKey(ClientType, on_delete=models.CASCADE, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.kod
+        return f"{self.name} - {self.client_type.type if self.client_type else 'Unknown'}"
+        
 
     class Meta:
-        verbose_name = "Valyuta"
-        verbose_name_plural = "Valyutalar"  
+        verbose_name = "Musderi"
+        verbose_name_plural = "Musderiler"
 
 
 class Color(models.Model):
     kod = models.CharField(max_length=100)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
-    currency = models.ForeignKey(Currency, on_delete=models.CASCADE, blank=True, null=True)
-    client_type = models.ForeignKey(ClientType, on_delete=models.CASCADE, blank=True, null=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True)
+    mary_diller_USD = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
+    mary_diller_TMT = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
+    diller_USD = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
+    diller_TMT = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
+    bez_ustanowka_USD = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
+    bez_ustanowka_TMT = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
+    mata_USD = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
+    mata_TMT = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -104,3 +98,30 @@ class Check(models.Model):
     class Meta:
         verbose_name = "Sargyt"
         verbose_name_plural = "Sargytlar"
+
+
+class Karniz(models.Model):
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Karniz"
+        verbose_name_plural = "Karnizler"
+
+
+class Selpe(models.Model):
+    name = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Selpe"
+        verbose_name_plural = "Selpeler"

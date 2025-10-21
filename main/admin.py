@@ -246,7 +246,7 @@ class KarnizAdmin(unfold_admin.ModelAdmin):
 
 @admin.register(Selpe)
 class SelpeAdmin(unfold_admin.ModelAdmin):
-    list_display = ('id', 'name', 'price', 'formatted_created_at', 'formatted_updated_at')
+    list_display = ('id', 'name', 'price_USD', 'price_TMT', 'formatted_created_at', 'formatted_updated_at')
     list_display_links = ('id', 'name')
     search_fields = ('name',)
     list_filter = ('created_at', 'updated_at')
@@ -265,6 +265,9 @@ class SelpeAdmin(unfold_admin.ModelAdmin):
     
     fieldsets = (
         ('Информация о шелпе', {
-            'fields': ('name', 'price')
+            'fields': ('name',)
+        }),
+        ('Цены', {
+            'fields': ('price_USD', 'price_TMT')
         }),
     )

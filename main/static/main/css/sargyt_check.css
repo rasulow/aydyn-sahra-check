@@ -1013,6 +1013,189 @@ textarea:focus {
     max-width: 450px;
 }
 
+/* User Select with Button Container */
+.user-select-with-button {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.user-select-with-button .searchable-select {
+    width: 100%;
+}
+
+/* Add User Button - Beautiful Modern Design */
+.add-user-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    background-size: 200% 200%;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3), 
+                0 2px 8px rgba(240, 147, 251, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    white-space: nowrap;
+    min-height: 40px;
+    position: relative;
+    overflow: hidden;
+    animation: gradientShift 4s ease infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.add-user-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.add-user-btn:hover::before {
+    left: 100%;
+}
+
+.add-user-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.45), 
+                0 4px 15px rgba(240, 147, 251, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    animation: gradientShift 2s ease infinite;
+}
+
+.add-user-btn:active {
+    transform: translateY(-1px) scale(1);
+    box-shadow: 0 3px 12px rgba(102, 126, 234, 0.3), 
+                0 1px 6px rgba(240, 147, 251, 0.2);
+}
+
+.add-user-btn .btn-icon {
+    font-size: 1.1rem;
+    font-weight: bold;
+    line-height: 1;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.add-user-btn .btn-text {
+    font-size: 0.85rem;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Small Modal Content for Add User */
+.modal-content-small {
+    max-width: 380px;
+}
+
+/* Text Input Styling for Add User Modal */
+.text-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.text-input:focus {
+    outline: none;
+    border-color: #4facfe;
+    box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+}
+
+/* Region Select Styling */
+.region-select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.region-select:focus {
+    outline: none;
+    border-color: #4facfe;
+    box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+}
+
+/* Nested Modal - Higher z-index */
+#add-user-modal {
+    z-index: 2100;
+}
+
+/* Total Price Container */
+.total-price-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 20px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+    border: 2px solid #dee2e6;
+}
+
+.total-price-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.total-price-label {
+    font-weight: 700;
+    color: #495057;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.total-price-value {
+    font-weight: 800;
+    font-size: 1rem;
+    padding: 5px 12px;
+    border-radius: 5px;
+    background: white;
+    border: 2px solid #4facfe;
+    color: #667eea;
+    min-width: 100px;
+    text-align: right;
+    box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2);
+}
+
 @media (max-width: 768px) {
     .selection-row {
         flex-direction: column;
@@ -1024,6 +1207,20 @@ textarea:focus {
     
     .main-selection-container {
         padding: 20px;
+    }
+    
+    .total-price-container {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .total-price-row {
+        justify-content: space-between;
+    }
+    
+    .total-price-value {
+        min-width: 100px;
     }
     
     .form-row {

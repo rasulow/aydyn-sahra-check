@@ -84,6 +84,18 @@
                 </tbody>
             </table>
             
+            <!-- Total Price Display -->
+            <div class="total-price-container">
+                <div class="total-price-row">
+                    <span class="total-price-label">Итого USD:</span>
+                    <span class="total-price-value" data-currency="USD">0.00</span>
+                </div>
+                <div class="total-price-row">
+                    <span class="total-price-label">Итого TMT:</span>
+                    <span class="total-price-value" data-currency="TMT">0.00</span>
+                </div>
+            </div>
+            
             <div class="table-buttons">
                 <button class="add-row-btn" id="add-row-btn" onclick="addNewRow()">
                     <span class="btn-icon">+</span>
@@ -110,13 +122,19 @@
             <div class="user-data-form">
                 <div class="selection-group">
                     <label for="modal-user-select">Выберите пользователя:</label>
-                    <div class="searchable-select">
-                        <input type="text" 
-                               id="modal-user-select" 
-                               class="select-input" 
-                               placeholder="Начните вводить имя пользователя..." 
-                               autocomplete="off">
-                        <div id="modal-user-dropdown" class="dropdown-list"></div>
+                    <div class="user-select-with-button">
+                        <div class="searchable-select">
+                            <input type="text" 
+                                   id="modal-user-select" 
+                                   class="select-input" 
+                                   placeholder="Начните вводить имя пользователя..." 
+                                   autocomplete="off">
+                            <div id="modal-user-dropdown" class="dropdown-list"></div>
+                        </div>
+                        <button type="button" class="add-user-btn" onclick="openAddUserModal()">
+                            <span class="btn-icon">+</span>
+                            <span class="btn-text">Добавить пользователя</span>
+                        </button>
                     </div>
                 </div>
                 
@@ -161,11 +179,48 @@
         </div>
     </div>
 
+    <!-- Modal for Adding New User -->
+    <div id="add-user-modal" class="modal">
+        <div class="modal-content modal-content-small">
+            <h3 class="modal-title">Добавить нового пользователя</h3>
+            <div class="user-data-form">
+                <div class="selection-group">
+                    <label for="new-user-name">Имя пользователя:</label>
+                    <input type="text" 
+                           id="new-user-name" 
+                           class="text-input" 
+                           placeholder="Введите имя пользователя..." 
+                           autocomplete="off">
+                </div>
+                
+                <div class="selection-group">
+                    <label for="new-user-region">Регион:</label>
+                    <select id="new-user-region" class="region-select">
+                        <option value="">Выберите регион...</option>
+                    </select>
+                </div>
+                
+                <div class="selection-group">
+                    <label for="new-user-client-type">Тип клиента:</label>
+                    <select id="new-user-client-type" class="region-select">
+                        <option value="">Выберите тип клиента...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-action-buttons">
+                <button class="modal-btn modal-btn-confirm" onclick="confirmAddUser()">Добавить</button>
+                <button class="modal-btn modal-btn-cancel" onclick="closeAddUserModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Load clients data from backend
         const users = {{ clients_json|safe }};
         const karnizOptions = {{ karniz_json|safe }};
         const selpeOptions = {{ selpe_json|safe }};
+        const regions = {{ regions_json|safe }};
+        const clientTypes = {{ client_types_json|safe }};
 
         // Modal elements
         const modalUserInput = document.getElementById('modal-user-select');
@@ -174,6 +229,38 @@
         
         let modalSelectedUser = null;
         let currentTableUserData = {}; // Store user data for each table
+        
+        // Populate region dropdown in add user modal
+        function populateRegionDropdown() {
+            const regionSelect = document.getElementById('new-user-region');
+            regionSelect.innerHTML = '<option value="">Выберите регион...</option>';
+            
+            regions.forEach(region => {
+                const option = document.createElement('option');
+                option.value = region.id;
+                option.textContent = region.name;
+                regionSelect.appendChild(option);
+            });
+        }
+        
+        // Populate client type dropdown in add user modal
+        function populateClientTypeDropdown() {
+            const clientTypeSelect = document.getElementById('new-user-client-type');
+            clientTypeSelect.innerHTML = '<option value="">Выберите тип клиента...</option>';
+            
+            clientTypes.forEach(clientType => {
+                const option = document.createElement('option');
+                option.value = clientType.id;
+                option.textContent = clientType.type;
+                clientTypeSelect.appendChild(option);
+            });
+        }
+        
+        // Initialize dropdowns on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            populateRegionDropdown();
+            populateClientTypeDropdown();
+        });
 
         // Open user data modal
         function openUserDataModal() {
@@ -191,6 +278,262 @@
             modalRegionDisplay.value = '';
             modalSelectedUser = null;
         }
+        
+        // Open add user modal (nested modal)
+        function openAddUserModal() {
+            const addUserModal = document.getElementById('add-user-modal');
+            addUserModal.classList.add('show');
+            
+            // Keep the main modal open (don't close it)
+        }
+        
+        // Close add user modal
+        function closeAddUserModal() {
+            const addUserModal = document.getElementById('add-user-modal');
+            addUserModal.classList.remove('show');
+            
+            // Reset inputs
+            document.getElementById('new-user-name').value = '';
+            document.getElementById('new-user-region').selectedIndex = 0;
+            document.getElementById('new-user-client-type').selectedIndex = 0;
+        }
+        
+        // Get CSRF token for Django
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Confirm add user - save to database via AJAX
+        async function confirmAddUser() {
+            const userName = document.getElementById('new-user-name').value.trim();
+            const regionSelect = document.getElementById('new-user-region');
+            const regionId = regionSelect.value;
+            const regionName = regionSelect.selectedOptions[0]?.text;
+            const clientTypeSelect = document.getElementById('new-user-client-type');
+            const clientTypeId = clientTypeSelect.value || null;
+            
+            // Validate inputs
+            if (!userName) {
+                alert('Пожалуйста, введите имя пользователя!');
+                return;
+            }
+            
+            if (!regionId) {
+                alert('Пожалуйста, выберите регион!');
+                return;
+            }
+            
+            // Prepare data for server
+            const data = {
+                name: userName,
+                region_id: parseInt(regionId),
+                client_type_id: clientTypeId ? parseInt(clientTypeId) : null
+            };
+            
+            try {
+                // Send request to server
+                const response = await fetch('{% url "main:add_client" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Create new user object with real ID from database
+                    const newUser = {
+                        id: result.client.id,
+                        name: result.client.name,
+                        region: result.client.region
+                    };
+                    
+                    // Add to users array
+                    users.push(newUser);
+                    
+                    // Automatically select the new user in the main modal
+                    selectModalUser(newUser);
+                    
+                    // Close add user modal
+                    closeAddUserModal();
+                    
+                    console.log('Новый пользователь добавлен в базу данных:', newUser);
+                    
+                    // Show success message
+                    alert(`Пользователь "${userName}" успешно добавлен!`);
+                } else {
+                    // Show error message from server
+                    alert('Ошибка: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Ошибка при добавлении пользователя:', error);
+                alert('Произошла ошибка при добавлении пользователя. Попробуйте снова.');
+            }
+        }
+
+        // Get client type for a specific table
+        function getClientTypeForTable(tableContainer) {
+            const tableNumber = Array.from(document.querySelectorAll('.table-container')).indexOf(tableContainer) + 1;
+            const userData = currentTableUserData[tableNumber];
+            
+            if (!userData || !userData.user) {
+                return null;
+            }
+            
+            // Find the user's client_type from the users array
+            const user = users.find(u => u.id === userData.user.id);
+            if (!user) return null;
+            
+            // Find the full client object to get client_type
+            const clients = {{ clients_json|safe }};
+            const clientData = clients.find(c => c.id === user.id);
+            return clientData ? clientData.client_type : null;
+        }
+        
+        // Calculate row price based on ini, boyy, kod renk, and selpe
+        function calculateRowPrice(row, clientType) {
+            const iniInput = row.querySelector('td:nth-child(2) input');
+            const boyyInput = row.querySelector('td:nth-child(3) input');
+            const kodRenkInput = row.querySelector('.kodrenk-search');
+            const selpeSelect = row.querySelector('.selpe-select');
+            
+            const ini = parseFloat(iniInput.value) || 0;
+            const boyy = parseFloat(boyyInput.value) || 0;
+            const kodRenkCode = kodRenkInput.value.trim();
+            const selpeId = selpeSelect ? parseInt(selpeSelect.value) : null;
+            
+            let totalUSD = 0;
+            let totalTMT = 0;
+            
+            // Calculate color price (area-based)
+            if (ini && boyy && kodRenkCode) {
+                // Find the color data
+                const colorData = kodRenks.find(kr => kr.code === kodRenkCode);
+                if (colorData) {
+                    let priceUSD = 0;
+                    let priceTMT = 0;
+                    
+                    // Determine which price to use based on client type
+                    if (clientType === 'bez ustanowka') {
+                        priceUSD = colorData.bez_ustanowka_USD || 0;
+                        priceTMT = colorData.bez_ustanowka_TMT || 0;
+                    } else if (clientType === 'diller') {
+                        priceUSD = colorData.diller_USD || 0;
+                        priceTMT = colorData.diller_TMT || 0;
+                    } else if (clientType === 'mary diller') {
+                        priceUSD = colorData.mary_diller_USD || 0;
+                        priceTMT = colorData.mary_diller_TMT || 0;
+                    } else {
+                        // Default to "mata" prices if no client type
+                        priceUSD = colorData.mata_USD || 0;
+                        priceTMT = colorData.mata_TMT || 0;
+                    }
+                    
+                    const area = ini * boyy;
+                    totalUSD += area * priceUSD;
+                    totalTMT += area * priceTMT;
+                }
+            }
+            
+            // Add Selpe price if selected
+            if (selpeId) {
+                const selpeData = selpeOptions.find(s => s.id === selpeId);
+                if (selpeData) {
+                    totalUSD += selpeData.price_USD || 0;
+                    totalTMT += selpeData.price_TMT || 0;
+                }
+            }
+            
+            return {
+                usd: totalUSD,
+                tmt: totalTMT
+            };
+        }
+        
+        // Calculate and update table totals
+        function updateTableTotals(tableContainer) {
+            const tbody = tableContainer.querySelector('tbody');
+            const rows = tbody.querySelectorAll('tr');
+            
+            let totalUSD = 0;
+            let totalTMT = 0;
+            
+            // Get client type for this table
+            const clientType = getClientTypeForTable(tableContainer);
+            
+            // Calculate total from all rows
+            rows.forEach(row => {
+                const prices = calculateRowPrice(row, clientType);
+                totalUSD += prices.usd;
+                totalTMT += prices.tmt;
+            });
+            
+            // Update the display
+            const usdDisplay = tableContainer.querySelector('.total-price-value[data-currency="USD"]');
+            const tmtDisplay = tableContainer.querySelector('.total-price-value[data-currency="TMT"]');
+            
+            if (usdDisplay) {
+                usdDisplay.textContent = totalUSD.toFixed(2);
+            }
+            if (tmtDisplay) {
+                tmtDisplay.textContent = totalTMT.toFixed(2);
+            }
+        }
+        
+        // Setup calculation listeners for a row
+        function setupRowCalculationListeners(row) {
+            const iniInput = row.querySelector('td:nth-child(2) input');
+            const boyyInput = row.querySelector('td:nth-child(3) input');
+            const kodRenkInput = row.querySelector('.kodrenk-search');
+            const selpeSelect = row.querySelector('.selpe-select');
+            
+            const tableContainer = row.closest('.table-container');
+            
+            // Add input listeners
+            [iniInput, boyyInput, kodRenkInput].forEach(input => {
+                if (input) {
+                    input.addEventListener('input', () => {
+                        updateTableTotals(tableContainer);
+                    });
+                    // Also listen for blur events for kodRenkInput
+                    if (input === kodRenkInput) {
+                        input.addEventListener('blur', () => {
+                            setTimeout(() => updateTableTotals(tableContainer), 200);
+                        });
+                    }
+                }
+            });
+            
+            // Add change listener for selpe select
+            if (selpeSelect) {
+                selpeSelect.addEventListener('change', () => {
+                    updateTableTotals(tableContainer);
+                });
+            }
+        }
+        
+        // Initialize calculation listeners for all existing rows
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.table-container').forEach(tableContainer => {
+                const rows = tableContainer.querySelectorAll('tbody tr');
+                rows.forEach(row => setupRowCalculationListeners(row));
+                updateTableTotals(tableContainer);
+            });
+        });
 
         // Add user data display to table
         function addUserDataToTable(tableContainer, tableNumber) {
@@ -719,6 +1062,13 @@
             const newSelpeSelect = newRow.querySelector('.selpe-select');
             populateSelpeSelect(newSelpeSelect);
             
+            // Setup calculation listeners for the new row
+            setupRowCalculationListeners(newRow);
+            
+            // Update table totals
+            const tableContainer = newRow.closest('.table-container');
+            updateTableTotals(tableContainer);
+            
             // If it's a weranda row, add visual indicator in Bellik field
             if (isWerandaRow && currentWerandaType) {
                 const bellikInput = newRow.querySelector('td:nth-child(8) input');
@@ -786,6 +1136,10 @@
                 
                 currentNumber++;
             }
+            
+            // Update table totals after row removal
+            const tableContainer = tableBody.closest('.table-container');
+            updateTableTotals(tableContainer);
             
             console.log('Строка удалена');
         }
@@ -918,6 +1272,16 @@
             categorySelects.forEach((select) => {
                 setupCategoryChangeListener(select);
             });
+            
+            // Reset total prices for the new table
+            const usdDisplay = newTableContainer.querySelector('.total-price-value[data-currency="USD"]');
+            const tmtDisplay = newTableContainer.querySelector('.total-price-value[data-currency="TMT"]');
+            if (usdDisplay) usdDisplay.textContent = '0.00';
+            if (tmtDisplay) tmtDisplay.textContent = '0.00';
+            
+            // Setup calculation listeners for all rows in the new table
+            const newTableRows = newTableBody.querySelectorAll('tr');
+            newTableRows.forEach(row => setupRowCalculationListeners(row));
             
             // Add buttons back to the new table
             newTableContainer.appendChild(currentButtons);

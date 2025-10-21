@@ -6,4 +6,5 @@ app_name = 'main'
 urlpatterns = [
     path('', views.home, name='home'),
     path('sargyt/', views.sargyt_check, name='sargyt_check'),
+    path('api/add-client/', views.add_client, name='add_client'),
 ]

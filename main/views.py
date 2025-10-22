@@ -1,7 +1,10 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from django.core.files.base import ContentFile
 import json
+import base64
 
 def home(request):
     """Main page view with three sections"""
@@ -18,7 +21,8 @@ def sargyt_check(request):
             'id': client.id,
             'name': client.name,
             'region': client.region.name,
-            'client_type': client.client_type.type if client.client_type else None
+            'client_type': client.client_type.type if client.client_type else None,
+            'client_type_id': client.client_type.id if client.client_type else None
         }
         for client in clients
     ]
@@ -160,6 +164,49 @@ def add_client(request):
                 'name': client.name,
                 'region': client.region.name
             }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Неверный формат данных'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def save_excel_to_check(request):
+    """API endpoint to save Excel file to Check model"""
+    from .models import Check
+    from datetime import datetime
+    
+    try:
+        # Get data from request
+        data = json.loads(request.body)
+        file_data = data.get('file_data')  # Base64 encoded file
+        file_name = data.get('file_name', f'Sargyt_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx')
+        
+        if not file_data:
+            return JsonResponse({'success': False, 'error': 'Файл не предоставлен'}, status=400)
+        
+        # Decode base64 file data
+        try:
+            # Remove data URL prefix if present
+            if ',' in file_data:
+                file_data = file_data.split(',')[1]
+            
+            file_content = base64.b64decode(file_data)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Ошибка декодирования файла: {str(e)}'}, status=400)
+        
+        # Create Check instance and save file
+        check = Check.objects.create()
+        check.file.save(file_name, ContentFile(file_content), save=True)
+        
+        # Return success with check UUID
+        return JsonResponse({
+            'success': True,
+            'check_uuid': str(check.uuid),
+            'check_id': check.id,
+            'file_url': check.file.url if check.file else None
         })
         
     except json.JSONDecodeError:

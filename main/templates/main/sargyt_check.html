@@ -6,8 +6,8 @@
     <title>Проверка заказов - Верификация данных</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'main/css/sargyt_check.css' %}">
-    <!-- SheetJS library for Excel export -->
-    <script src="{% static 'main/js/xlsx.full.min.js' %}"></script>
+    <!-- SheetJS library with styling support for Excel export -->
+    <script src="{% static 'main/js/xlsx-js-style.min.js' %}"></script>
 </head>
 <body>
     <div class="container">
@@ -45,6 +45,9 @@
                         <th>Kod renk</th>
                         <th>Selpe</th>
                         <th>Bellik</th>
+                        <th>m²</th>
+                        <th>Price (USD)</th>
+                        <th>Price (TMT)</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -77,6 +80,9 @@
                             </select>
                         </td>
                         <td><input type="text" class="table-input" placeholder="Примечание"></td>
+                        <td class="meter-square">0.00</td>
+                        <td class="row-price-usd">$0.00</td>
+                        <td class="row-price-tmt">0.00 TMT</td>
                         <td>
                             <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
                         </td>
@@ -385,7 +391,7 @@
             }
         }
 
-        // Get client type for a specific table
+        // Get client type ID for a specific table
         function getClientTypeForTable(tableContainer) {
             const tableNumber = Array.from(document.querySelectorAll('.table-container')).indexOf(tableContainer) + 1;
             const userData = currentTableUserData[tableNumber];
@@ -394,14 +400,14 @@
                 return null;
             }
             
-            // Find the user's client_type from the users array
+            // Find the user's client_type_id from the users array
             const user = users.find(u => u.id === userData.user.id);
             if (!user) return null;
             
-            // Find the full client object to get client_type
+            // Find the full client object to get client_type_id
             const clients = {{ clients_json|safe }};
             const clientData = clients.find(c => c.id === user.id);
-            return clientData ? clientData.client_type : null;
+            return clientData ? clientData.client_type_id : null;
         }
         
         // Calculate row price based on ini, boyy, kod renk, and selpe
@@ -409,11 +415,15 @@
             const iniInput = row.querySelector('td:nth-child(2) input');
             const boyyInput = row.querySelector('td:nth-child(3) input');
             const kodRenkInput = row.querySelector('.kodrenk-search');
+            const karnizSelect = row.querySelector('.karniz-select');
+            const categorySelect = row.querySelector('.category-select');
             const selpeSelect = row.querySelector('.selpe-select');
             
             const ini = parseFloat(iniInput.value) || 0;
             const boyy = parseFloat(boyyInput.value) || 0;
             const kodRenkCode = kodRenkInput.value.trim();
+            const karnizValue = karnizSelect ? karnizSelect.value : '';
+            const categoryId = categorySelect ? parseInt(categorySelect.value) : null;
             const selpeId = selpeSelect ? parseInt(selpeSelect.value) : null;
             
             let totalUSD = 0;
@@ -427,25 +437,46 @@
                     let priceUSD = 0;
                     let priceTMT = 0;
                     
-                    // Determine which price to use based on client type
-                    if (clientType === 'bez ustanowka') {
-                        priceUSD = colorData.bez_ustanowka_USD || 0;
-                        priceTMT = colorData.bez_ustanowka_TMT || 0;
-                    } else if (clientType === 'diller') {
-                        priceUSD = colorData.diller_USD || 0;
-                        priceTMT = colorData.diller_TMT || 0;
-                    } else if (clientType === 'mary diller') {
-                        priceUSD = colorData.mary_diller_USD || 0;
-                        priceTMT = colorData.mary_diller_TMT || 0;
-                    } else {
-                        // Default to "mata" prices if no client type
+                    // If Karniz is set to "mata", always use mata prices regardless of client type
+                    if (karnizValue === 'mata') {
                         priceUSD = colorData.mata_USD || 0;
                         priceTMT = colorData.mata_TMT || 0;
+                    } else {
+                        // Determine which price to use based on client type ID
+                        // 1 -> diller, 2 -> mary diller, 3 -> bez ustanowka
+                        if (clientType === 1) {
+                            // ID 1: diller
+                            priceUSD = colorData.diller_USD || 0;
+                            priceTMT = colorData.diller_TMT || 0;
+                        } else if (clientType === 2) {
+                            // ID 2: mary diller
+                            priceUSD = colorData.mary_diller_USD || 0;
+                            priceTMT = colorData.mary_diller_TMT || 0;
+                        } else if (clientType === 3) {
+                            // ID 3: bez ustanowka
+                            priceUSD = colorData.bez_ustanowka_USD || 0;
+                            priceTMT = colorData.bez_ustanowka_TMT || 0;
+                        } else {
+                            // Default to "mata" prices if no client type
+                            priceUSD = colorData.mata_USD || 0;
+                            priceTMT = colorData.mata_TMT || 0;
+                        }
                     }
                     
-                    const area = ini * boyy;
+                    let area = ini * boyy;
+                    
+                    // Special rule for category ID 6: if 0.7 <= area < 1, round to 1
+                    if (categoryId === 6 && area >= 0.7 && area < 1) {
+                        area = 1;
+                    }
                     totalUSD += area * priceUSD;
                     totalTMT += area * priceTMT;
+                    
+                    // Update meter square display in the row
+                    const meterSquareCell = row.querySelector('.meter-square');
+                    if (meterSquareCell) {
+                        meterSquareCell.textContent = area.toFixed(2);
+                    }
                 }
             }
             
@@ -456,6 +487,16 @@
                     totalUSD += selpeData.price_USD || 0;
                     totalTMT += selpeData.price_TMT || 0;
                 }
+            }
+            
+            // Update row price displays
+            const rowPriceUsdCell = row.querySelector('.row-price-usd');
+            const rowPriceTmtCell = row.querySelector('.row-price-tmt');
+            if (rowPriceUsdCell) {
+                rowPriceUsdCell.textContent = '$' + totalUSD.toFixed(2);
+            }
+            if (rowPriceTmtCell) {
+                rowPriceTmtCell.textContent = totalTMT.toFixed(2) + ' TMT';
             }
             
             return {
@@ -499,6 +540,7 @@
             const iniInput = row.querySelector('td:nth-child(2) input');
             const boyyInput = row.querySelector('td:nth-child(3) input');
             const kodRenkInput = row.querySelector('.kodrenk-search');
+            const karnizSelect = row.querySelector('.karniz-select');
             const selpeSelect = row.querySelector('.selpe-select');
             
             const tableContainer = row.closest('.table-container');
@@ -517,6 +559,13 @@
                     }
                 }
             });
+            
+            // Add change listener for karniz select
+            if (karnizSelect) {
+                karnizSelect.addEventListener('change', () => {
+                    updateTableTotals(tableContainer);
+                });
+            }
             
             // Add change listener for selpe select
             if (selpeSelect) {
@@ -734,6 +783,10 @@
                 kodRenkInput.style.backgroundColor = '';
                 selpeSelect.style.backgroundColor = '';
             }
+            
+            // Update table totals when karniz changes (affects price calculation)
+            const tableContainer = row.closest('.table-container');
+            updateTableTotals(tableContainer);
         }
         
         // Setup karniz change event listener
@@ -793,8 +846,20 @@
                         return matchesSearch && matchesCategory;
                     });
                     displayKodRenkOptions(dropdown, filtered, input);
+                    
+                    // Check if exact match exists
+                    const exactMatch = kodRenks.find(kr => kr.code.toLowerCase() === searchTerm);
+                    if (exactMatch) {
+                        input.style.backgroundColor = '';
+                        input.style.color = '';
+                    } else {
+                        input.style.backgroundColor = '#ffebee';
+                        input.style.color = '#c62828';
+                    }
                 } else {
                     dropdown.style.display = 'none';
+                    input.style.backgroundColor = '';
+                    input.style.color = '';
                 }
             });
 
@@ -841,6 +906,9 @@
                     item.addEventListener('click', () => {
                         input.value = kr.code;
                         dropdown.style.display = 'none';
+                        // Reset color to normal when valid code is selected
+                        input.style.backgroundColor = '';
+                        input.style.color = '';
                         console.log('Selected kod renk:', kr.code);
                     });
                     dropdown.appendChild(item);
@@ -1036,6 +1104,9 @@
                     </select>
                 </td>
                 <td><input type="text" class="table-input" placeholder="Примечание"></td>
+                <td class="meter-square">0.00</td>
+                <td class="row-price-usd">$0.00</td>
+                <td class="row-price-tmt">0.00 TMT</td>
                 <td>
                     <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
                 </td>
@@ -1371,13 +1442,16 @@
                 
                 // Set column widths
                 ws['!cols'] = [
-                    {wch: 10}, // №
-                    {wch: 12}, // Ini
-                    {wch: 12}, // Boyy
-                    {wch: 18}, // Karniz
-                    {wch: 18}, // Kod Renk
-                    {wch: 15}, // Selpe
-                    {wch: 25}  // Bellik
+                    {wch: 6},  // №
+                    {wch: 8},  // Ini
+                    {wch: 8},  // Boyy
+                    {wch: 12}, // Karniz
+                    {wch: 12}, // Kod Renk
+                    {wch: 10}, // Selpe
+                    {wch: 18}, // Bellik
+                    {wch: 8},  // m²
+                    {wch: 12}, // Price USD
+                    {wch: 12}  // Price TMT
                 ];
                 
                 // Set page breaks
@@ -1390,24 +1464,34 @@
                 // Apply styling to the combined sheet
                 applyExcelStylingCombined(ws, formData.orders);
                 
-                // Merge cells for order titles
+                // Merge cells for title and user info
                 ws['!merges'] = [];
                 let rowOffset = 0;
                 formData.orders.forEach((order, index) => {
-                    // Merge title row across all columns
+                    const userData = currentTableUserData[order.orderNumber];
+                    
+                    // Merge ЗАКАЗ title cells (columns 0-1)
                     ws['!merges'].push({
                         s: { r: rowOffset, c: 0 },
-                        e: { r: rowOffset, c: 6 }
+                        e: { r: rowOffset, c: 1 }
                     });
                     
-                    const userData = currentTableUserData[order.orderNumber];
-                    const titleRows = 2; // Title + empty
-                    const userRows = userData ? 2 : 0; // User info row + empty (now on one line)
+                    // Merge user name cells (columns 3-4) if user data exists
+                    // Row structure: ЗАКАЗ №X (0-1) | User: (2) | Name (3-4) | Region: (5) | Region value (6)
+                    if (userData) {
+                        ws['!merges'].push({
+                            s: { r: rowOffset, c: 3 },
+                            e: { r: rowOffset, c: 4 }
+                        });
+                    }
+                    
+                    const headerInfoRows = 1; // Title and user info on same row
                     const headerRow = 1;
                     const dataRows = order.rows.length;
+                    const totalRows = 2; // ИТОГО USD and ИТОГО TMT
                     const spacingRows = index < formData.orders.length - 1 ? 2 : 0;
                     
-                    rowOffset += titleRows + userRows + headerRow + dataRows + spacingRows;
+                    rowOffset += headerInfoRows + headerRow + dataRows + totalRows + spacingRows;
                 });
                 
                 // Set print options for better page layout
@@ -1431,14 +1515,56 @@
                 const sheetName = `Orders ${currentDate}`;
                 XLSX.utils.book_append_sheet(wb, ws, sheetName);
                 
-                // Generate file and download with styling support
+                // Generate file and download
                 const fileName = `Sargyt_${currentDate}.xlsx`;
                 XLSX.writeFile(wb, fileName, {
-                    bookType: 'xlsx',
-                    bookSST: false,
-                    type: 'binary',
-                    cellStyles: true
+                    bookType: 'xlsx'
                 });
+                
+                // Also save file to server
+                try {
+                    // Generate file as array buffer
+                    const wbout = XLSX.write(wb, {
+                        bookType: 'xlsx',
+                        type: 'array'
+                    });
+                    
+                    // Convert to base64
+                    const blob = new Blob([wbout], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+                    const reader = new FileReader();
+                    
+                    reader.onloadend = async function() {
+                        const base64data = reader.result;
+                        
+                        // Send to server
+                        try {
+                            const response = await fetch('/api/save-excel/', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    file_data: base64data,
+                                    file_name: fileName
+                                })
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                console.log('File saved to server with UUID:', result.check_uuid);
+                            } else {
+                                console.error('Error saving file to server:', result.error);
+                            }
+                        } catch (error) {
+                            console.error('Error sending file to server:', error);
+                        }
+                    };
+                    
+                    reader.readAsDataURL(blob);
+                } catch (error) {
+                    console.error('Error saving file to server:', error);
+                }
                 
                 console.log('Excel file downloaded with styling');
                 alert('Excel файл скачан!');
@@ -1458,94 +1584,56 @@
                 const userData = currentTableUserData[order.orderNumber];
                 let headerRowIndex = currentRow;
                 
-                // Style order title
-                const titleCellRef = XLSX.utils.encode_cell({r: currentRow, c: 0});
-                if (ws[titleCellRef]) {
-                    ws[titleCellRef].s = {
+                // Style combined title and user info row
+                // Row structure: ЗАКАЗ №X (0-1) | User: (2) | Name (3-4) | Region: (5) | Region value (6)
+                for (let col = 0; col < 7; col++) {
+                    const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
+                    if (ws[cellRef]) {
+                        ws[cellRef].s = {
+                            font: {
+                                name: 'Calibri',
+                                sz: 11,
+                                bold: col === 0 || col === 2 || col === 5, // Bold for "ЗАКАЗ", "User:" and "Region:" labels
+                                color: { rgb: '2C3E50' }
+                            },
+                            alignment: {
+                                vertical: 'center',
+                                horizontal: (col === 2 || col === 5) ? 'right' : 'left' // All left except User: and Region: labels
+                            }
+                        };
+                    }
+                }
+                ws['!rows'] = ws['!rows'] || [];
+                ws['!rows'][currentRow] = { hpt: 20 };
+                currentRow += 1; // Combined title and user info row
+                headerRowIndex = currentRow;
+                
+                // Style header row
+                for (let col = range.s.c; col <= range.e.c; col++) {
+                    const cellRef = XLSX.utils.encode_cell({r: headerRowIndex, c: col});
+                    // Create cell if it doesn't exist
+                    if (!ws[cellRef]) {
+                        ws[cellRef] = { v: '', t: 's' };
+                    }
+                    
+                    ws[cellRef].s = {
                         font: {
                             name: 'Calibri',
-                            sz: 14,
+                            sz: 12,
                             bold: true,
-                            color: { rgb: '1A1A1A' }
+                            color: { rgb: '000000' }
                         },
                         alignment: {
                             vertical: 'center',
                             horizontal: 'center'
                         },
-                        fill: {
-                            fgColor: { rgb: 'E8F5E9' }
-                        },
                         border: {
-                            bottom: { style: 'medium', color: { rgb: '4CAF50' } }
+                            top: { style: 'thin', color: { rgb: '000000' } },
+                            bottom: { style: 'medium', color: { rgb: '000000' } },
+                            left: { style: 'thin', color: { rgb: '000000' } },
+                            right: { style: 'thin', color: { rgb: '000000' } }
                         }
                     };
-                    ws['!rows'] = ws['!rows'] || [];
-                    ws['!rows'][currentRow] = { hpt: 28 };
-                }
-                currentRow += 1; // Title row
-                currentRow += 1; // Empty row after title
-                headerRowIndex = currentRow;
-                
-                // Style user info section if exists (now on one line)
-                if (userData) {
-                    // User info is now in one row: User: | Name | empty | Region: | Region name
-                    for (let col = 0; col < 5; col++) {
-                        const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
-                        if (ws[cellRef]) {
-                            ws[cellRef].s = {
-                                font: {
-                                    name: 'Calibri',
-                                    sz: 11,
-                                    bold: col === 0 || col === 3, // Bold for "User:" and "Region:" labels
-                                    color: { rgb: '2C3E50' }
-                                },
-                                alignment: {
-                                    vertical: 'center',
-                                    horizontal: (col === 0 || col === 3) ? 'right' : 'left'
-                                },
-                                fill: {
-                                    fgColor: { rgb: 'F8F9FA' }
-                                },
-                                border: {
-                                    top: { style: 'thin', color: { rgb: '000000' } },
-                                    bottom: { style: 'thin', color: { rgb: '000000' } },
-                                    left: { style: 'thin', color: { rgb: '000000' } },
-                                    right: { style: 'thin', color: { rgb: '000000' } }
-                                }
-                            };
-                        }
-                    }
-                    currentRow += 1; // User info row
-                    currentRow += 1; // Empty row
-                    headerRowIndex = currentRow;
-                }
-                
-                // Style header row
-                for (let col = range.s.c; col <= range.e.c; col++) {
-                    const cellRef = XLSX.utils.encode_cell({r: headerRowIndex, c: col});
-                    if (ws[cellRef]) {
-                        ws[cellRef].s = {
-                            font: {
-                                name: 'Calibri',
-                                sz: 12,
-                                bold: true,
-                                color: { rgb: 'FFFFFF' }
-                            },
-                            fill: {
-                                fgColor: { rgb: '495057' }
-                            },
-                            alignment: {
-                                vertical: 'center',
-                                horizontal: 'center'
-                            },
-                            border: {
-                                top: { style: 'thin', color: { rgb: '000000' } },
-                                bottom: { style: 'medium', color: { rgb: '000000' } },
-                                left: { style: 'thin', color: { rgb: '000000' } },
-                                right: { style: 'thin', color: { rgb: '000000' } }
-                            }
-                        };
-                    }
                 }
                 
                 // Set row height for header (once, outside column loop)
@@ -1573,41 +1661,84 @@
                     
                     for (let col = range.s.c; col <= range.e.c; col++) {
                         const cellRef = XLSX.utils.encode_cell({r: row, c: col});
-                        if (ws[cellRef]) {
-                            ws[cellRef].s = {
-                                font: {
-                                    name: 'Calibri',
-                                    sz: 11,
-                                    color: { rgb: '2C3E50' }
-                                },
-                                fill: {
-                                    fgColor: { 
-                                        rgb: isWerandaRow ? 'E3F2FD' :
-                                             isEven ? 'FFFFFF' : 'F8F9FA'
-                                    }
-                                },
-                                alignment: {
-                                    vertical: 'center',
-                                    horizontal: col === 0 ? 'center' :
-                                              col === 1 || col === 2 ? 'right' :
-                                              'left'
-                                },
-                                border: {
-                                    top: { style: 'thin', color: { rgb: '000000' } },
-                                    bottom: { style: 'thin', color: { rgb: '000000' } },
-                                    left: { style: 'thin', color: { rgb: '000000' } },
-                                    right: { style: 'thin', color: { rgb: '000000' } }
-                                },
-                                numFmt: col === 1 || col === 2 ? '0.00' : '@'
-                            };
-                            // Set row height for data
-                            ws['!rows'] = ws['!rows'] || [];
-                            ws['!rows'][row] = ws['!rows'][row] || { hpt: 20 };
+                        // Create cell if it doesn't exist
+                        if (!ws[cellRef]) {
+                            ws[cellRef] = { v: '', t: 's' };
                         }
+                        
+                        ws[cellRef].s = {
+                            font: {
+                                name: 'Calibri',
+                                sz: 11,
+                                color: { rgb: '2C3E50' }
+                            },
+                            alignment: {
+                                vertical: 'center',
+                                horizontal: 'center'
+                            },
+                            border: {
+                                top: { style: 'thin', color: { rgb: '000000' } },
+                                bottom: { style: 'thin', color: { rgb: '000000' } },
+                                left: { style: 'thin', color: { rgb: '000000' } },
+                                right: { style: 'thin', color: { rgb: '000000' } }
+                            },
+                            numFmt: col === 1 || col === 2 ? '0.00' : '@'
+                        };
+                        // Set row height for data
+                        ws['!rows'] = ws['!rows'] || [];
+                        ws['!rows'][row] = ws['!rows'][row] || { hpt: 20 };
                     }
                 }
                 
                 currentRow += dataRowCount;
+                
+                // Style totals rows (2 total rows, no empty row before)
+                
+                // Style ИТОГО USD row
+                for (let col = 0; col <= 7; col++) {
+                    const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
+                    // Create cell if it doesn't exist
+                    if (!ws[cellRef]) {
+                        ws[cellRef] = { v: '', t: 's' };
+                    }
+                    
+                    ws[cellRef].s = {
+                        font: {
+                            name: 'Calibri',
+                            sz: 11,
+                            bold: col >= 5, // Bold for label and value (columns 5 and 6)
+                            color: { rgb: col >= 5 ? '1A1A1A' : '2C3E50' }
+                        },
+                        alignment: {
+                            vertical: 'center',
+                            horizontal: col === 6 ? 'right' : col === 5 ? 'right' : 'center'
+                        }
+                    };
+                }
+                currentRow += 1;
+                
+                // Style ИТОГО TMT row
+                for (let col = 0; col <= 7; col++) {
+                    const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
+                    // Create cell if it doesn't exist
+                    if (!ws[cellRef]) {
+                        ws[cellRef] = { v: '', t: 's' };
+                    }
+                    
+                    ws[cellRef].s = {
+                        font: {
+                            name: 'Calibri',
+                            sz: 11,
+                            bold: col >= 5, // Bold for label and value (columns 5 and 6)
+                            color: { rgb: col >= 5 ? '1A1A1A' : '2C3E50' }
+                        },
+                        alignment: {
+                            vertical: 'center',
+                            horizontal: col === 6 ? 'right' : col === 5 ? 'right' : 'center'
+                        }
+                    };
+                }
+                currentRow += 1;
                 
                 // Skip empty spacing rows between orders
                 if (orderIndex < orders.length - 1) {
@@ -1741,32 +1872,37 @@
         function generateExcelSheetData(order, formData) {
             const data = [];
             
-            // Add order title
-            data.push([`ЗАКАЗ №${order.orderNumber}`]);
-            data.push([]);
-            
-            // Add header info on one line
+            // Add header info on one line with order number
+            // Structure: ЗАКАЗ №X (0-1 merged) | User: (2) | Name (3-4 merged) | Region: (5) | Region value (6)
             const userData = currentTableUserData[order.orderNumber];
             if (userData) {
-                data.push(['User:', userData.user.name, '', 'Region:', userData.region]);
-                data.push([]);
+                data.push([`ЗАКАЗ №${order.orderNumber}`, '', 'User:', userData.user.name, '', 'Region:', userData.region]);
+            } else {
+                data.push([`ЗАКАЗ №${order.orderNumber}`]);
             }
             
-            // Add table headers
-            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik']);
+            // Add table headers (10 columns)
+            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'm²', 'Price USD', 'Price TMT']);
             
-            // Add rows
+            // Add rows (ensure all have 10 columns)
             order.rows.forEach(row => {
                 data.push([
-                    row.number,
-                    row.en,
-                    row.boy,
-                    row.karniz,
-                    row.kodRenk,
-                    row.selpe,
-                    row.bellik
+                    row.number || '',
+                    row.en || '',
+                    row.boy || '',
+                    row.karniz || '',
+                    row.kodRenk || '',
+                    row.selpe || '',
+                    row.bellik || '',
+                    row.meterSquare || '0.00',
+                    row.priceUSD ? row.priceUSD.toFixed(2) : '0.00',
+                    row.priceTMT ? row.priceTMT.toFixed(2) : '0.00'
                 ]);
             });
+            
+            // Add total prices (10 columns: 8 empty + label + value)
+            data.push(['', '', '', '', '', '', '', '', 'ИТОГО USD:', order.totalUSD ? order.totalUSD.toFixed(2) : '0.00']);
+            data.push(['', '', '', '', '', '', '', '', 'ИТОГО TMT:', order.totalTMT ? order.totalTMT.toFixed(2) : '0.00']);
             
             return data;
         }
@@ -1789,7 +1925,18 @@
                 // Get all rows from the table
                 const rows = tableContainer.querySelectorAll('.table-row');
                 
+                // Get client type for this table
+                const clientType = getClientTypeForTable(tableContainer);
+                
+                let orderTotalUSD = 0;
+                let orderTotalTMT = 0;
+                
                 rows.forEach((row) => {
+                    // Calculate row price
+                    const rowPrice = calculateRowPrice(row, clientType);
+                    orderTotalUSD += rowPrice.usd;
+                    orderTotalTMT += rowPrice.tmt;
+                    
                     const rowData = {
                         number: row.querySelector('.row-number').textContent,
                         en: row.querySelector('td:nth-child(2) input').value,
@@ -1799,6 +1946,9 @@
                         kodRenk: row.querySelector('.kodrenk-search').value,
                         selpe: row.querySelector('.selpe-select').selectedOptions[0]?.text || '',
                         bellik: row.querySelector('td:nth-child(8) input').value,
+                        meterSquare: row.querySelector('.meter-square')?.textContent || '0.00',
+                        priceUSD: rowPrice.usd,
+                        priceTMT: rowPrice.tmt,
                         isWeranda: row.getAttribute('data-weranda') === 'true',
                         werandaType: row.getAttribute('data-weranda-type') || '',
                         werandaLabel: row.getAttribute('data-weranda-label') || ''
@@ -1806,6 +1956,10 @@
                     
                     orderData.rows.push(rowData);
                 });
+                
+                // Add totals to order data
+                orderData.totalUSD = orderTotalUSD;
+                orderData.totalTMT = orderTotalTMT;
                 
                 data.orders.push(orderData);
             });

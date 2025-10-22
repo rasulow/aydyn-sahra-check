@@ -7,4 +7,5 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('sargyt/', views.sargyt_check, name='sargyt_check'),
     path('api/add-client/', views.add_client, name='add_client'),
+    path('api/save-excel/', views.save_excel_to_check, name='save_excel_to_check'),
 ]

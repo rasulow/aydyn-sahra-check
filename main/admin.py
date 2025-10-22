@@ -161,39 +161,14 @@ class ColorAdmin(unfold_admin.ModelAdmin):
 
 @admin.register(Check)
 class CheckAdmin(unfold_admin.ModelAdmin):
-    list_display = ('id', 'client', 'price', 'colored_status', 'formatted_created_at', 'formatted_updated_at')
-    list_display_links = ('id', 'client')
-    search_fields = ('client__name',)
-    list_filter = ('status', 'created_at', 'updated_at')
+    list_display = ('id', 'uuid', 'file', 'formatted_created_at', 'formatted_updated_at')
+    list_display_links = ('id', 'uuid')
+    search_fields = ('uuid',)
+    list_filter = ('created_at', 'updated_at')
+    date_hierarchy = 'created_at'
     ordering = ('-created_at',)
-    readonly_fields = ('formatted_created_at', 'formatted_updated_at', 'colored_status')
+    readonly_fields = ('uuid', 'formatted_created_at', 'formatted_updated_at')
     list_per_page = 50
-    autocomplete_fields = ['client']
-    
-    def colored_status(self, obj):
-        """Display status with color coding"""
-        color_map = {
-            'inactive': '#95a5a6',  # Gray
-            'process': '#f39c12',   # Orange
-            'done': '#27ae60'       # Green
-        }
-        
-        status_labels = {
-            'inactive': 'Inactive',
-            'process': 'Process',
-            'done': 'Done'
-        }
-        
-        color = color_map.get(obj.status, '#95a5a6')
-        label = status_labels.get(obj.status, obj.status)
-        
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 5px 12px; border-radius: 4px; font-weight: 600; font-size: 0.85rem; display: inline-block;">{}</span>',
-            color,
-            label
-        )
-    colored_status.short_description = 'Статус'
-    colored_status.admin_order_field = 'status'
     
     def formatted_created_at(self, obj):
         return obj.created_at.strftime('%d.%m.%Y %H:%M')
@@ -207,13 +182,7 @@ class CheckAdmin(unfold_admin.ModelAdmin):
     
     fieldsets = (
         ('Основная информация', {
-            'fields': ('client', 'file')
-        }),
-        ('Финансовая информация', {
-            'fields': ('price',)
-        }),
-        ('Статус', {
-            'fields': ('status',)
+            'fields': ('uuid', 'file')
         }),
     )
 

@@ -1292,9 +1292,15 @@ textarea:focus {
     }
 }
 
-
-
-
+/* Hide meter square and price columns from frontend display */
+.order-table th:nth-child(9),
+.order-table td:nth-child(9),
+.order-table th:nth-child(10),
+.order-table td:nth-child(10),
+.order-table th:nth-child(11),
+.order-table td:nth-child(11) {
+    display: none;
+}
 
 
 

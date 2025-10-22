@@ -46,8 +46,7 @@
                         <th>Selpe</th>
                         <th>Bellik</th>
                         <th>m²</th>
-                        <th>Price (USD)</th>
-                        <th>Price (TMT)</th>
+                        <th class="price-header">Price</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -81,8 +80,7 @@
                         </td>
                         <td><input type="text" class="table-input" placeholder="Примечание"></td>
                         <td class="meter-square">0.00</td>
-                        <td class="row-price-usd">$0.00</td>
-                        <td class="row-price-tmt">0.00 TMT</td>
+                        <td class="row-price">0.00</td>
                         <td>
                             <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
                         </td>
@@ -93,12 +91,8 @@
             <!-- Total Price Display -->
             <div class="total-price-container">
                 <div class="total-price-row">
-                    <span class="total-price-label">Итого USD:</span>
-                    <span class="total-price-value" data-currency="USD">0.00</span>
-                </div>
-                <div class="total-price-row">
-                    <span class="total-price-label">Итого TMT:</span>
-                    <span class="total-price-value" data-currency="TMT">0.00</span>
+                    <span class="total-price-label">Итого:</span>
+                    <span class="total-price-value">0.00</span>
                 </div>
             </div>
             
@@ -151,6 +145,14 @@
                            class="region-display" 
                            placeholder="Регион будет выбран автоматически" 
                            readonly>
+                </div>
+                
+                <div class="selection-group">
+                    <label for="modal-currency-select">Валюта:</label>
+                    <select id="modal-currency-select" class="region-select">
+                        <option value="USD">USD</option>
+                        <option value="TMT">TMT</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-action-buttons">
@@ -234,6 +236,7 @@
         const modalRegionDisplay = document.getElementById('modal-user-region');
         
         let modalSelectedUser = null;
+        let modalSelectedCurrency = 'USD'; // Default currency
         let currentTableUserData = {}; // Store user data for each table
         
         // Populate region dropdown in add user modal
@@ -283,6 +286,7 @@
             modalUserInput.value = '';
             modalRegionDisplay.value = '';
             modalSelectedUser = null;
+            document.getElementById('modal-currency-select').value = 'USD';
         }
         
         // Open add user modal (nested modal)
@@ -410,6 +414,15 @@
             return clientData ? clientData.client_type_id : null;
         }
         
+        // Get currency for a specific table
+        function getCurrencyForTable(tableContainer) {
+            const tableNumber = Array.from(document.querySelectorAll('.table-container')).indexOf(tableContainer) + 1;
+            const userData = currentTableUserData[tableNumber];
+            const currency = userData && userData.currency ? userData.currency : 'USD';
+            console.log('getCurrencyForTable - Table:', tableNumber, 'Currency:', currency, 'UserData:', userData);
+            return currency;
+        }
+        
         // Calculate row price based on ini, boyy, kod renk, and selpe
         function calculateRowPrice(row, clientType) {
             const iniInput = row.querySelector('td:nth-child(2) input');
@@ -426,8 +439,12 @@
             const categoryId = categorySelect ? parseInt(categorySelect.value) : null;
             const selpeId = selpeSelect ? parseInt(selpeSelect.value) : null;
             
-            let totalUSD = 0;
-            let totalTMT = 0;
+            // Get currency for this table
+            const tableContainer = row.closest('.table-container');
+            const currency = getCurrencyForTable(tableContainer);
+            console.log('calculateRowPrice - Using currency:', currency);
+            
+            let totalPrice = 0;
             
             // Calculate color price (area-based)
             if (ini && boyy && kodRenkCode) {
@@ -469,8 +486,11 @@
                     if (categoryId === 6 && area >= 0.7 && area < 1) {
                         area = 1;
                     }
-                    totalUSD += area * priceUSD;
-                    totalTMT += area * priceTMT;
+                    
+                    // Use the selected currency
+                    const selectedPrice = currency === 'USD' ? priceUSD : priceTMT;
+                    console.log('Price calculation - Currency:', currency, 'USD:', priceUSD, 'TMT:', priceTMT, 'Selected:', selectedPrice);
+                    totalPrice += area * selectedPrice;
                     
                     // Update meter square display in the row
                     const meterSquareCell = row.querySelector('.meter-square');
@@ -484,25 +504,21 @@
             if (selpeId) {
                 const selpeData = selpeOptions.find(s => s.id === selpeId);
                 if (selpeData) {
-                    totalUSD += selpeData.price_USD || 0;
-                    totalTMT += selpeData.price_TMT || 0;
+                    totalPrice += currency === 'USD' ? (selpeData.price_USD || 0) : (selpeData.price_TMT || 0);
                 }
             }
             
-            // Update row price displays
-            const rowPriceUsdCell = row.querySelector('.row-price-usd');
-            const rowPriceTmtCell = row.querySelector('.row-price-tmt');
-            if (rowPriceUsdCell) {
-                rowPriceUsdCell.textContent = '$' + totalUSD.toFixed(2);
-            }
-            if (rowPriceTmtCell) {
-                rowPriceTmtCell.textContent = totalTMT.toFixed(2) + ' TMT';
+            // Update row price display
+            const rowPriceCell = row.querySelector('.row-price');
+            if (rowPriceCell) {
+                if (currency === 'USD') {
+                    rowPriceCell.textContent = '$' + totalPrice.toFixed(2);
+                } else {
+                    rowPriceCell.textContent = totalPrice.toFixed(2) + ' TMT';
+                }
             }
             
-            return {
-                usd: totalUSD,
-                tmt: totalTMT
-            };
+            return totalPrice;
         }
         
         // Calculate and update table totals
@@ -510,28 +526,38 @@
             const tbody = tableContainer.querySelector('tbody');
             const rows = tbody.querySelectorAll('tr');
             
-            let totalUSD = 0;
-            let totalTMT = 0;
+            let total = 0;
             
-            // Get client type for this table
+            // Get client type and currency for this table
             const clientType = getClientTypeForTable(tableContainer);
+            const currency = getCurrencyForTable(tableContainer);
             
             // Calculate total from all rows
             rows.forEach(row => {
-                const prices = calculateRowPrice(row, clientType);
-                totalUSD += prices.usd;
-                totalTMT += prices.tmt;
+                const price = calculateRowPrice(row, clientType);
+                total += price;
             });
             
             // Update the display
-            const usdDisplay = tableContainer.querySelector('.total-price-value[data-currency="USD"]');
-            const tmtDisplay = tableContainer.querySelector('.total-price-value[data-currency="TMT"]');
+            const totalDisplay = tableContainer.querySelector('.total-price-value');
+            const totalLabel = tableContainer.querySelector('.total-price-label');
             
-            if (usdDisplay) {
-                usdDisplay.textContent = totalUSD.toFixed(2);
+            if (totalDisplay) {
+                if (currency === 'USD') {
+                    totalDisplay.textContent = '$' + total.toFixed(2);
+                } else {
+                    totalDisplay.textContent = total.toFixed(2) + ' TMT';
+                }
             }
-            if (tmtDisplay) {
-                tmtDisplay.textContent = totalTMT.toFixed(2);
+            
+            if (totalLabel) {
+                totalLabel.textContent = `Итого (${currency}):`;
+            }
+            
+            // Update table header
+            const priceHeader = tableContainer.querySelector('.price-header');
+            if (priceHeader) {
+                priceHeader.textContent = `Price (${currency})`;
             }
         }
         
@@ -607,6 +633,10 @@
                 <div class="user-data-row">
                     <span class="user-data-label">Region:</span>
                     <span class="user-data-value">${userData.region}</span>
+                </div>
+                <div class="user-data-row">
+                    <span class="user-data-label">Currency:</span>
+                    <span class="user-data-value">${userData.currency}</span>
                 </div>
             `;
         }
@@ -1105,8 +1135,7 @@
                 </td>
                 <td><input type="text" class="table-input" placeholder="Примечание"></td>
                 <td class="meter-square">0.00</td>
-                <td class="row-price-usd">$0.00</td>
-                <td class="row-price-tmt">0.00 TMT</td>
+                <td class="row-price">0.00</td>
                 <td>
                     <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
                 </td>
@@ -1238,6 +1267,11 @@
             const modal = document.getElementById('user-data-modal');
             const isNewTable = modal.getAttribute('data-new-table') === 'true';
             
+            // Get selected currency
+            const currencySelect = document.getElementById('modal-currency-select');
+            modalSelectedCurrency = currencySelect.value;
+            console.log('Selected currency from modal:', modalSelectedCurrency);
+            
             if (isNewTable) {
                 // Creating a new table
                 modal.removeAttribute('data-new-table');
@@ -1247,8 +1281,10 @@
                 const tableNumber = 1;
                 currentTableUserData[tableNumber] = {
                     user: modalSelectedUser,
-                    region: modalRegionDisplay.value
+                    region: modalRegionDisplay.value,
+                    currency: modalSelectedCurrency
                 };
+                console.log('Saved user data for table 1:', currentTableUserData[tableNumber]);
                 
                 // Hide initial button
                 document.getElementById('initial-add-container').style.display = 'none';
@@ -1262,6 +1298,9 @@
                 
                 // Add user data display to table
                 addUserDataToTable(firstTable, tableNumber);
+                
+                // Update table totals to show correct currency
+                updateTableTotals(firstTable);
                 
                 closeUserDataModal();
                 console.log('Первый заказ создан с данными пользователя');
@@ -1281,8 +1320,10 @@
             // Store user data for this new table
             currentTableUserData[newTableNumber] = {
                 user: modalSelectedUser,
-                region: modalRegionDisplay.value
+                region: modalRegionDisplay.value,
+                currency: modalSelectedCurrency
             };
+            console.log('Saved user data for table', newTableNumber, ':', currentTableUserData[newTableNumber]);
             
             // Remove buttons from current table
             const currentButtons = lastTableContainer.querySelector('.table-buttons');
@@ -1345,10 +1386,8 @@
             });
             
             // Reset total prices for the new table
-            const usdDisplay = newTableContainer.querySelector('.total-price-value[data-currency="USD"]');
-            const tmtDisplay = newTableContainer.querySelector('.total-price-value[data-currency="TMT"]');
-            if (usdDisplay) usdDisplay.textContent = '0.00';
-            if (tmtDisplay) tmtDisplay.textContent = '0.00';
+            const totalDisplay = newTableContainer.querySelector('.total-price-value');
+            if (totalDisplay) totalDisplay.textContent = '0.00';
             
             // Setup calculation listeners for all rows in the new table
             const newTableRows = newTableBody.querySelectorAll('tr');
@@ -1362,6 +1401,9 @@
             
             // Add user data display to new table
             addUserDataToTable(newTableContainer, newTableNumber);
+            
+            // Update table totals to show correct currency
+            updateTableTotals(newTableContainer);
             
             closeUserDataModal();
             console.log('Добавлена новая таблица: Заказ №' + newTableNumber);
@@ -1440,7 +1482,7 @@
                 // Create worksheet from combined data
                 const ws = XLSX.utils.aoa_to_sheet(allOrdersData);
                 
-                // Set column widths
+                // Set column widths (9 columns now)
                 ws['!cols'] = [
                     {wch: 6},  // №
                     {wch: 8},  // Ini
@@ -1450,8 +1492,7 @@
                     {wch: 10}, // Selpe
                     {wch: 18}, // Bellik
                     {wch: 8},  // m²
-                    {wch: 12}, // Price USD
-                    {wch: 12}  // Price TMT
+                    {wch: 14}  // Price (USD or TMT)
                 ];
                 
                 // Set page breaks
@@ -1488,8 +1529,15 @@
                     const headerInfoRows = 1; // Title and user info on same row
                     const headerRow = 1;
                     const dataRows = order.rows.length;
-                    const totalRows = 2; // ИТОГО USD and ИТОГО TMT
+                    const totalRows = 1; // Only one ИТОГО row now
                     const spacingRows = index < formData.orders.length - 1 ? 2 : 0;
+                    
+                    // Merge total row cells (columns 7-8) for "ИТОГО (currency): value"
+                    const totalRowIndex = rowOffset + headerInfoRows + headerRow + dataRows;
+                    ws['!merges'].push({
+                        s: { r: totalRowIndex, c: 7 },
+                        e: { r: totalRowIndex, c: 8 }
+                    });
                     
                     rowOffset += headerInfoRows + headerRow + dataRows + totalRows + spacingRows;
                 });
@@ -1692,10 +1740,9 @@
                 
                 currentRow += dataRowCount;
                 
-                // Style totals rows (2 total rows, no empty row before)
-                
-                // Style ИТОГО USD row
-                for (let col = 0; col <= 7; col++) {
+                // Style total row (only 1 total row now, 9 columns)
+                // Columns 7-8 are merged for total
+                for (let col = 0; col <= 8; col++) {
                     const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
                     // Create cell if it doesn't exist
                     if (!ws[cellRef]) {
@@ -1705,39 +1752,22 @@
                     ws[cellRef].s = {
                         font: {
                             name: 'Calibri',
-                            sz: 11,
-                            bold: col >= 5, // Bold for label and value (columns 5 and 6)
-                            color: { rgb: col >= 5 ? '1A1A1A' : '2C3E50' }
+                            sz: 12,
+                            bold: col >= 7, // Bold for merged total cell (columns 7-8)
+                            color: { rgb: col >= 7 ? '1A1A1A' : '2C3E50' }
                         },
                         alignment: {
                             vertical: 'center',
-                            horizontal: col === 6 ? 'right' : col === 5 ? 'right' : 'center'
-                        }
-                    };
-                }
-                currentRow += 1;
-                
-                // Style ИТОГО TMT row
-                for (let col = 0; col <= 7; col++) {
-                    const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
-                    // Create cell if it doesn't exist
-                    if (!ws[cellRef]) {
-                        ws[cellRef] = { v: '', t: 's' };
-                    }
-                    
-                    ws[cellRef].s = {
-                        font: {
-                            name: 'Calibri',
-                            sz: 11,
-                            bold: col >= 5, // Bold for label and value (columns 5 and 6)
-                            color: { rgb: col >= 5 ? '1A1A1A' : '2C3E50' }
+                            horizontal: col >= 7 ? 'right' : 'center' // Right align merged total cell
                         },
-                        alignment: {
-                            vertical: 'center',
-                            horizontal: col === 6 ? 'right' : col === 5 ? 'right' : 'center'
-                        }
+                        fill: col >= 7 ? {
+                            fgColor: { rgb: 'F8F9FA' } // Light background for total
+                        } : undefined
                     };
                 }
+                // Set row height for total row
+                ws['!rows'] = ws['!rows'] || [];
+                ws['!rows'][currentRow] = { hpt: 25 };
                 currentRow += 1;
                 
                 // Skip empty spacing rows between orders
@@ -1881,10 +1911,13 @@
                 data.push([`ЗАКАЗ №${order.orderNumber}`]);
             }
             
-            // Add table headers (10 columns)
-            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'm²', 'Price USD', 'Price TMT']);
+            // Get currency for this order
+            const currency = userData && userData.currency ? userData.currency : 'USD';
             
-            // Add rows (ensure all have 10 columns)
+            // Add table headers (9 columns now - removed one price column)
+            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'm²', `Price (${currency})`]);
+            
+            // Add rows (ensure all have 9 columns)
             order.rows.forEach(row => {
                 data.push([
                     row.number || '',
@@ -1895,14 +1928,14 @@
                     row.selpe || '',
                     row.bellik || '',
                     row.meterSquare || '0.00',
-                    row.priceUSD ? row.priceUSD.toFixed(2) : '0.00',
-                    row.priceTMT ? row.priceTMT.toFixed(2) : '0.00'
+                    row.price ? row.price.toFixed(2) : '0.00'
                 ]);
             });
             
-            // Add total prices (10 columns: 8 empty + label + value)
-            data.push(['', '', '', '', '', '', '', '', 'ИТОГО USD:', order.totalUSD ? order.totalUSD.toFixed(2) : '0.00']);
-            data.push(['', '', '', '', '', '', '', '', 'ИТОГО TMT:', order.totalTMT ? order.totalTMT.toFixed(2) : '0.00']);
+            // Add total price (9 columns: 6 empty + merged cell with label and value)
+            const totalValue = order.total ? order.total.toFixed(2) : '0.00';
+            const totalText = `ИТОГО (${currency}): ${totalValue}`;
+            data.push(['', '', '', '', '', '', '', totalText, '']);
             
             return data;
         }
@@ -1925,17 +1958,16 @@
                 // Get all rows from the table
                 const rows = tableContainer.querySelectorAll('.table-row');
                 
-                // Get client type for this table
+                // Get client type and currency for this table
                 const clientType = getClientTypeForTable(tableContainer);
+                const currency = getCurrencyForTable(tableContainer);
                 
-                let orderTotalUSD = 0;
-                let orderTotalTMT = 0;
+                let orderTotal = 0;
                 
                 rows.forEach((row) => {
                     // Calculate row price
                     const rowPrice = calculateRowPrice(row, clientType);
-                    orderTotalUSD += rowPrice.usd;
-                    orderTotalTMT += rowPrice.tmt;
+                    orderTotal += rowPrice;
                     
                     const rowData = {
                         number: row.querySelector('.row-number').textContent,
@@ -1947,8 +1979,7 @@
                         selpe: row.querySelector('.selpe-select').selectedOptions[0]?.text || '',
                         bellik: row.querySelector('td:nth-child(8) input').value,
                         meterSquare: row.querySelector('.meter-square')?.textContent || '0.00',
-                        priceUSD: rowPrice.usd,
-                        priceTMT: rowPrice.tmt,
+                        price: rowPrice,
                         isWeranda: row.getAttribute('data-weranda') === 'true',
                         werandaType: row.getAttribute('data-weranda-type') || '',
                         werandaLabel: row.getAttribute('data-weranda-label') || ''
@@ -1957,9 +1988,9 @@
                     orderData.rows.push(rowData);
                 });
                 
-                // Add totals to order data
-                orderData.totalUSD = orderTotalUSD;
-                orderData.totalTMT = orderTotalTMT;
+                // Add total to order data
+                orderData.total = orderTotal;
+                orderData.currency = currency;
                 
                 data.orders.push(orderData);
             });

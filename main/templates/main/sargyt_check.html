@@ -674,6 +674,13 @@
             modalSelectedUser = user;
             modalUserInput.value = user.name;
             modalRegionDisplay.value = user.region;
+            
+            // Set client ID on the table container
+            const tableContainer = document.querySelector('.table-container');
+            if (tableContainer) {
+                tableContainer.setAttribute('data-client-id', user.id);
+                console.log('Set client ID on table container:', user.id);
+            }
             modalRegionDisplay.classList.add('filled');
             modalUserDropdown.style.display = 'none';
             
@@ -1445,14 +1452,77 @@
             console.log('Удалена таблица: Заказ №' + tableNumber);
         }
         
+        // Function to update client's wallet
+        async function updateClientWallet(clientId, orderItems) {
+            if (!clientId) {
+                console.error('No client ID provided for wallet update');
+                return false;
+            }
+            
+            try {
+                console.log('Sending wallet update request for client:', clientId);
+                const response = await fetch('/api/update-wallet/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        client_id: clientId,
+                        order_items: orderItems
+                    })
+                });
+                
+                const result = await response.json();
+                return result.success === true;
+            } catch (error) {
+                console.error('Error updating wallet:', error);
+                return false;
+            }
+        }
+        
         // Function to download data as Excel file
-        function downloadAsExcel() {
+        async function downloadAsExcel() {
             console.log('Starting Excel download...');
             
             try {
                 // Collect all form data
                 const formData = collectAllFormData();
                 console.log('Form data collected:', formData);
+                
+                // Prepare order items for wallet update
+                const orderItems = [];
+                if (formData.clientId && formData.orders.length > 0) {
+                    formData.orders.forEach(order => {
+                        order.rows.forEach(row => {
+                            // Convert to numbers and handle possible string values
+                            const width = parseFloat(row.en) || 0;
+                            const height = parseFloat(row.boy) || 0;
+                            
+                            if (width > 0 && height > 0) {  // Only add valid dimensions
+                                orderItems.push({
+                                    width: width,
+                                    height: height,
+                                    quantity: 1 // Default quantity to 1 if not specified
+                                });
+                            }
+                        });
+                    });
+                    
+                    if (orderItems.length > 0) {
+                        console.log('Updating wallet with items:', orderItems);
+                        const walletUpdated = await updateClientWallet(formData.clientId, orderItems);
+                        console.log('Wallet update result:', walletUpdated);
+                        
+                        if (!walletUpdated) {
+                            console.warn('Failed to update wallet, but continuing with download');
+                        }
+                    } else {
+                        console.warn('No valid order items to update wallet');
+                    }
+                } else {
+                    console.warn('No client ID or orders to process for wallet update');
+                }
                 
                 // Create workbook
                 const wb = XLSX.utils.book_new();
@@ -1943,13 +2013,19 @@
         // Collect all form data from the page
         function collectAllFormData() {
             const data = {
-                orders: []
+                orders: [],
+                clientId: null
             };
             
             // Get all tables
             const tables = document.querySelectorAll('.table-container');
             
             tables.forEach((tableContainer, tableIndex) => {
+                // Get client ID from the first table
+                if (tableIndex === 0) {
+                    data.clientId = tableContainer.getAttribute('data-client-id');
+                }
+                
                 const orderData = {
                     orderNumber: tableIndex + 1,
                     rows: []

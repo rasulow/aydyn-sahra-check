@@ -173,19 +173,104 @@ def add_client(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def update_wallet(request):
+    """API endpoint to update client's wallet based on order items"""
+    from decimal import Decimal
+    from .models import Client
+    
+    try:
+        data = json.loads(request.body)
+        client_id = data.get('client_id')
+        order_items = data.get('order_items', [])
+        
+        if not client_id:
+            return JsonResponse({'success': False, 'error': 'Client ID is required'}, status=400)
+        
+        try:
+            client = Client.objects.get(id=client_id)
+        except Client.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Client not found'}, status=404)
+        
+        # Calculate total area from order items
+        total_area = Decimal('0.0')
+        for item in order_items:
+            try:
+                width = Decimal(str(item.get('width', 0)))
+                height = Decimal(str(item.get('height', 0)))
+                quantity = Decimal(str(item.get('quantity', 1)))
+                total_area += width * height * quantity
+            except (TypeError, ValueError, Decimal.InvalidOperation):
+                continue
+        
+        # Update client's wallet (add 3 * total_area)
+        if total_area > 0:
+            wallet_increase = total_area * 3
+            client.wallet += wallet_increase
+            client.save()
+            
+            return JsonResponse({
+                'success': True,
+                'client_id': client.id,
+                'total_area': str(total_area),
+                'wallet_increase': str(wallet_increase),
+                'new_wallet_balance': str(client.wallet)
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'No area to add to wallet',
+            'client_id': client.id,
+            'current_wallet_balance': str(client.wallet)
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def save_excel_to_check(request):
     """API endpoint to save Excel file to Check model"""
-    from .models import Check
+    from .models import Check, Client
     from datetime import datetime
+    from decimal import Decimal
     
     try:
         # Get data from request
         data = json.loads(request.body)
         file_data = data.get('file_data')  # Base64 encoded file
         file_name = data.get('file_name', f'Sargyt_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx')
+        client_id = data.get('client_id')
         
         if not file_data:
             return JsonResponse({'success': False, 'error': 'Файл не предоставлен'}, status=400)
+        
+        # Get client and calculate total area
+        total_area = Decimal('0.0')
+        if client_id:
+            try:
+                client = Client.objects.get(id=client_id)
+                
+                # Calculate total area from order items
+                order_items = data.get('order_items', [])
+                for item in order_items:
+                    try:
+                        width = Decimal(str(item.get('width', 0)))
+                        height = Decimal(str(item.get('height', 0)))
+                        quantity = Decimal(str(item.get('quantity', 1)))
+                        total_area += width * height * quantity
+                    except (TypeError, ValueError, decimal.InvalidOperation):
+                        continue
+                
+                # Update client's wallet (add 3 * total_area)
+                if total_area > 0:
+                    wallet_increase = total_area * 3
+                    client.wallet += wallet_increase
+                    client.save()
+                    
+            except Client.DoesNotExist:
+                pass  # Continue without updating wallet if client not found
         
         # Decode base64 file data
         try:
@@ -201,13 +286,23 @@ def save_excel_to_check(request):
         check = Check.objects.create()
         check.file.save(file_name, ContentFile(file_content), save=True)
         
-        # Return success with check UUID
-        return JsonResponse({
+        # Return success with check UUID and wallet update info
+        response_data = {
             'success': True,
             'check_uuid': str(check.uuid),
             'check_id': check.id,
             'file_url': check.file.url if check.file else None
-        })
+        }
+        
+        if client_id and total_area > 0:
+            response_data.update({
+                'wallet_updated': True,
+                'total_area': str(total_area),
+                'wallet_increase': str(total_area * 3),
+                'new_wallet_balance': str(client.wallet)
+            })
+        
+        return JsonResponse(response_data)
         
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': 'Неверный формат данных'}, status=400)

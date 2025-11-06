@@ -1490,38 +1490,43 @@
                 const formData = collectAllFormData();
                 console.log('Form data collected:', formData);
                 
-                // Prepare order items for wallet update
-                const orderItems = [];
-                if (formData.clientId && formData.orders.length > 0) {
-                    formData.orders.forEach(order => {
-                        order.rows.forEach(row => {
-                            // Convert to numbers and handle possible string values
-                            const width = parseFloat(row.en) || 0;
-                            const height = parseFloat(row.boy) || 0;
-                            
-                            if (width > 0 && height > 0) {  // Only add valid dimensions
-                                orderItems.push({
-                                    width: width,
-                                    height: height,
-                                    quantity: 1 // Default quantity to 1 if not specified
-                                });
-                            }
-                        });
+                // Process each table individually for wallet updates
+                const tables = document.querySelectorAll('.table-container');
+                
+                for (const table of tables) {
+                    const clientId = table.getAttribute('data-client-id');
+                    if (!clientId) {
+                        console.warn('No client ID found for a table, skipping wallet update');
+                        continue;
+                    }
+                    
+                    const orderItems = [];
+                    const rows = table.querySelectorAll('tbody tr:not(.total-row)');
+                    
+                    rows.forEach(row => {
+                        const width = parseFloat(row.querySelector('td:nth-child(2) input')?.value) || 0;
+                        const height = parseFloat(row.querySelector('td:nth-child(3) input')?.value) || 0;
+                        
+                        if (width > 0 && height > 0) {
+                            orderItems.push({
+                                width: width,
+                                height: height,
+                                quantity: 1
+                            });
+                        }
                     });
                     
                     if (orderItems.length > 0) {
-                        console.log('Updating wallet with items:', orderItems);
-                        const walletUpdated = await updateClientWallet(formData.clientId, orderItems);
-                        console.log('Wallet update result:', walletUpdated);
+                        console.log(`Updating wallet for client ${clientId} with ${orderItems.length} items`);
+                        const walletUpdated = await updateClientWallet(clientId, orderItems);
+                        console.log(`Wallet update result for client ${clientId}:`, walletUpdated);
                         
                         if (!walletUpdated) {
-                            console.warn('Failed to update wallet, but continuing with download');
+                            console.warn(`Failed to update wallet for client ${clientId}, but continuing with download`);
                         }
                     } else {
-                        console.warn('No valid order items to update wallet');
+                        console.warn(`No valid order items found for client ${clientId} to update wallet`);
                     }
-                } else {
-                    console.warn('No client ID or orders to process for wallet update');
                 }
                 
                 // Create workbook

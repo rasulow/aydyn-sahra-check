@@ -482,8 +482,13 @@
                     
                     let area = ini * boyy;
                     
+                    // Special rule for Weranda items: if area < 1, set to 1
+                    const isWeranda = row.querySelector('.item-name')?.textContent?.toLowerCase().includes('weranda');
+                    if (isWeranda && area < 1) {
+                        area = 1;
+                    }
                     // Special rule for category ID 6: if 0.7 <= area < 1, round to 1
-                    if (categoryId === 6 && area >= 0.7 && area < 1) {
+                    else if (categoryId === 6 && area >= 0.7 && area < 1) {
                         area = 1;
                     }
                     

@@ -1509,12 +1509,13 @@
                     rows.forEach(row => {
                         const width = parseFloat(row.querySelector('td:nth-child(2) input')?.value) || 0;
                         const height = parseFloat(row.querySelector('td:nth-child(3) input')?.value) || 0;
+                        const quantity = 3; // Fixed quantity of 3 as per the requirement
                         
                         if (width > 0 && height > 0) {
                             orderItems.push({
                                 width: width,
                                 height: height,
-                                quantity: 1
+                                quantity: quantity
                             });
                         }
                     });

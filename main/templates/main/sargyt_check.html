@@ -681,12 +681,6 @@
             modalUserInput.value = user.name;
             modalRegionDisplay.value = user.region;
             
-            // Set client ID on the table container
-            const tableContainer = document.querySelector('.table-container');
-            if (tableContainer) {
-                tableContainer.setAttribute('data-client-id', user.id);
-                console.log('Set client ID on table container:', user.id);
-            }
             modalRegionDisplay.classList.add('filled');
             modalUserDropdown.style.display = 'none';
             
@@ -1309,6 +1303,10 @@
                 const firstTable = document.querySelector('.table-container[data-table-number="1"]');
                 firstTable.style.display = 'block';
                 
+                // Set client ID on the first table
+                firstTable.setAttribute('data-client-id', modalSelectedUser.id);
+                console.log('Set client ID on first table:', modalSelectedUser.id);
+                
                 // Add user data display to table
                 addUserDataToTable(firstTable, tableNumber);
                 
@@ -1349,6 +1347,10 @@
             newTableContainer.setAttribute('data-table-number', newTableNumber);
             const tableTitle = newTableContainer.querySelector('.table-title');
             tableTitle.textContent = 'Заказ №' + newTableNumber;
+            
+            // Set client ID on the new table
+            newTableContainer.setAttribute('data-client-id', modalSelectedUser.id);
+            console.log('Set client ID on new table', newTableNumber, ':', modalSelectedUser.id);
             
             // Get all rows in the new table and keep only the first one
             const newTableBody = newTableContainer.querySelector('[id^="table-body"]');

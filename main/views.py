@@ -232,45 +232,17 @@ def update_wallet(request):
 @require_http_methods(["POST"])
 def save_excel_to_check(request):
     """API endpoint to save Excel file to Check model"""
-    from .models import Check, Client
+    from .models import Check
     from datetime import datetime
-    from decimal import Decimal
     
     try:
         # Get data from request
         data = json.loads(request.body)
         file_data = data.get('file_data')  # Base64 encoded file
         file_name = data.get('file_name', f'Sargyt_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx')
-        client_id = data.get('client_id')
         
         if not file_data:
             return JsonResponse({'success': False, 'error': 'Файл не предоставлен'}, status=400)
-        
-        # Get client and calculate total area
-        total_area = Decimal('0.0')
-        if client_id:
-            try:
-                client = Client.objects.get(id=client_id)
-                
-                # Calculate total area from order items
-                order_items = data.get('order_items', [])
-                for item in order_items:
-                    try:
-                        width = Decimal(str(item.get('width', 0)))
-                        height = Decimal(str(item.get('height', 0)))
-                        quantity = Decimal(str(item.get('quantity', 1)))
-                        total_area += width * height * quantity
-                    except (TypeError, ValueError, decimal.InvalidOperation):
-                        continue
-                
-                # Update client's wallet (add 3 * total_area)
-                if total_area > 0:
-                    wallet_increase = total_area * 3
-                    client.wallet += wallet_increase
-                    client.save()
-                    
-            except Client.DoesNotExist:
-                pass  # Continue without updating wallet if client not found
         
         # Decode base64 file data
         try:
@@ -286,21 +258,13 @@ def save_excel_to_check(request):
         check = Check.objects.create()
         check.file.save(file_name, ContentFile(file_content), save=True)
         
-        # Return success with check UUID and wallet update info
+        # Return success with check UUID
         response_data = {
             'success': True,
             'check_uuid': str(check.uuid),
             'check_id': check.id,
             'file_url': check.file.url if check.file else None
         }
-        
-        if client_id and total_area > 0:
-            response_data.update({
-                'wallet_updated': True,
-                'total_area': str(total_area),
-                'wallet_increase': str(total_area * 3),
-                'new_wallet_balance': str(client.wallet)
-            })
         
         return JsonResponse(response_data)
         

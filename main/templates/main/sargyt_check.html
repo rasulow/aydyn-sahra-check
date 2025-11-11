@@ -1567,7 +1567,7 @@
                 // Create worksheet from combined data
                 const ws = XLSX.utils.aoa_to_sheet(allOrdersData);
                 
-                // Set column widths (9 columns now)
+                // Set column widths (11 columns now)
                 ws['!cols'] = [
                     {wch: 6},  // №
                     {wch: 8},  // Ini
@@ -1577,7 +1577,9 @@
                     {wch: 10}, // Selpe
                     {wch: 18}, // Bellik
                     {wch: 8},  // m²
-                    {wch: 14}  // Price (USD or TMT)
+                    {wch: 14}, // m² Price (USD or TMT)
+                    {wch: 12}, // Selpe baha
+                    {wch: 14}  // Total Price (USD or TMT)
                 ];
                 
                 // Set page breaks
@@ -1617,11 +1619,11 @@
                     const totalRows = 1; // Only one ИТОГО row now
                     const spacingRows = index < formData.orders.length - 1 ? 2 : 0;
                     
-                    // Merge total row cells (columns 7-8) for "ИТОГО (currency): value"
+                    // Merge total row cells (columns 9-10) for "ИТОГО (currency): value"
                     const totalRowIndex = rowOffset + headerInfoRows + headerRow + dataRows;
                     ws['!merges'].push({
-                        s: { r: totalRowIndex, c: 7 },
-                        e: { r: totalRowIndex, c: 8 }
+                        s: { r: totalRowIndex, c: 9 },
+                        e: { r: totalRowIndex, c: 10 }
                     });
                     
                     rowOffset += headerInfoRows + headerRow + dataRows + totalRows + spacingRows;
@@ -1719,7 +1721,7 @@
                 
                 // Style combined title and user info row
                 // Row structure: ЗАКАЗ №X (0-1) | User: (2) | Name (3-4) | Region: (5) | Region value (6)
-                for (let col = 0; col < 7; col++) {
+                for (let col = 0; col < 11; col++) {
                     const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
                     if (ws[cellRef]) {
                         ws[cellRef].s = {
@@ -1790,7 +1792,7 @@
                         }
                     }
                     
-                    const isWerandaRow = rowData[7] && String(rowData[7]).includes('Weranda');
+                    const isWerandaRow = rowData[6] && String(rowData[6]).includes('Weranda');
                     
                     for (let col = range.s.c; col <= range.e.c; col++) {
                         const cellRef = XLSX.utils.encode_cell({r: row, c: col});
@@ -1825,9 +1827,9 @@
                 
                 currentRow += dataRowCount;
                 
-                // Style total row (only 1 total row now, 9 columns)
-                // Columns 7-8 are merged for total
-                for (let col = 0; col <= 8; col++) {
+                // Style total row (only 1 total row now, 11 columns)
+                // Columns 9-10 are merged for total
+                for (let col = 0; col <= 10; col++) {
                     const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
                     // Create cell if it doesn't exist
                     if (!ws[cellRef]) {
@@ -1838,14 +1840,14 @@
                         font: {
                             name: 'Calibri',
                             sz: 12,
-                            bold: col >= 7, // Bold for merged total cell (columns 7-8)
-                            color: { rgb: col >= 7 ? '1A1A1A' : '2C3E50' }
+                            bold: col >= 9, // Bold for merged total cell (columns 9-10)
+                            color: { rgb: col >= 9 ? '1A1A1A' : '2C3E50' }
                         },
                         alignment: {
                             vertical: 'center',
-                            horizontal: col >= 7 ? 'right' : 'center' // Right align merged total cell
+                            horizontal: col >= 9 ? 'right' : 'center' // Right align merged total cell
                         },
-                        fill: col >= 7 ? {
+                        fill: col >= 9 ? {
                             fgColor: { rgb: 'F8F9FA' } // Light background for total
                         } : undefined
                     };
@@ -1999,10 +2001,10 @@
             // Get currency for this order
             const currency = userData && userData.currency ? userData.currency : 'USD';
             
-            // Add table headers (9 columns now - removed one price column)
-            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'm²', `Price (${currency})`]);
+            // Add table headers (11 columns now - added m² Price and Selpe baha)
+            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'm²', `m² Price (${currency})`, 'Selpe baha', `Total Price (${currency})`]);
             
-            // Add rows (ensure all have 9 columns)
+            // Add rows (ensure all have 11 columns)
             order.rows.forEach(row => {
                 data.push([
                     row.number || '',
@@ -2013,14 +2015,16 @@
                     row.selpe || '',
                     row.bellik || '',
                     row.meterSquare || '0.00',
+                    row.areaPrice ? row.areaPrice.toFixed(2) : '0.00',
+                    row.selpePrice ? row.selpePrice.toFixed(2) : '0.00',
                     row.price ? row.price.toFixed(2) : '0.00'
                 ]);
             });
             
-            // Add total price (9 columns: 6 empty + merged cell with label and value)
+            // Add total price (11 columns: 8 empty + merged cell with label and value)
             const totalValue = order.total ? order.total.toFixed(2) : '0.00';
             const totalText = `ИТОГО (${currency}): ${totalValue}`;
-            data.push(['', '', '', '', '', '', '', totalText, '']);
+            data.push(['', '', '', '', '', '', '', '', '', totalText, '']);
             
             return data;
         }
@@ -2056,8 +2060,72 @@
                 let orderTotal = 0;
                 
                 rows.forEach((row) => {
-                    // Calculate row price
-                    const rowPrice = calculateRowPrice(row, clientType);
+                    // Calculate prices separately
+                    const iniInput = row.querySelector('td:nth-child(2) input');
+                    const boyyInput = row.querySelector('td:nth-child(3) input');
+                    const kodRenkInput = row.querySelector('.kodrenk-search');
+                    const karnizSelect = row.querySelector('.karniz-select');
+                    const categorySelect = row.querySelector('.category-select');
+                    const selpeSelect = row.querySelector('.selpe-select');
+                    
+                    const ini = parseFloat(iniInput.value) || 0;
+                    const boyy = parseFloat(boyyInput.value) || 0;
+                    const kodRenkCode = kodRenkInput.value.trim();
+                    const karnizValue = karnizSelect ? karnizSelect.value : '';
+                    const categoryId = categorySelect ? parseInt(categorySelect.value) : null;
+                    const selpeId = selpeSelect ? parseInt(selpeSelect.value) : null;
+                    
+                    let areaPrice = 0; // Price from area calculation only
+                    let selpePrice = 0; // Selpe price only
+                    
+                    // Calculate area price
+                    if (ini && boyy && kodRenkCode) {
+                        const colorData = kodRenks.find(kr => kr.code === kodRenkCode);
+                        if (colorData) {
+                            let priceUSD = 0;
+                            let priceTMT = 0;
+                            
+                            if (karnizValue === 'mata') {
+                                priceUSD = colorData.mata_USD || 0;
+                                priceTMT = colorData.mata_TMT || 0;
+                            } else {
+                                if (clientType === 1) {
+                                    priceUSD = colorData.diller_USD || 0;
+                                    priceTMT = colorData.diller_TMT || 0;
+                                } else if (clientType === 2) {
+                                    priceUSD = colorData.mary_diller_USD || 0;
+                                    priceTMT = colorData.mary_diller_TMT || 0;
+                                } else if (clientType === 3) {
+                                    priceUSD = colorData.bez_ustanowka_USD || 0;
+                                    priceTMT = colorData.bez_ustanowka_TMT || 0;
+                                } else {
+                                    priceUSD = colorData.mata_USD || 0;
+                                    priceTMT = colorData.mata_TMT || 0;
+                                }
+                            }
+                            
+                            let area = ini * boyy;
+                            const isWeranda = row.getAttribute('data-weranda') === 'true';
+                            if (isWeranda && (ini * boyy) < 1) {
+                                area = 1;
+                            } else if (categoryId === 6 && area >= 0.7 && area < 1) {
+                                area = 1;
+                            }
+                            
+                            const selectedPrice = currency === 'USD' ? priceUSD : priceTMT;
+                            areaPrice = area * selectedPrice;
+                        }
+                    }
+                    
+                    // Calculate selpe price
+                    if (selpeId) {
+                        const selpeData = selpeOptions.find(s => s.id === selpeId);
+                        if (selpeData) {
+                            selpePrice = currency === 'USD' ? (selpeData.price_USD || 0) : (selpeData.price_TMT || 0);
+                        }
+                    }
+                    
+                    const rowPrice = areaPrice + selpePrice;
                     orderTotal += rowPrice;
                     
                     const rowData = {
@@ -2070,6 +2138,8 @@
                         selpe: row.querySelector('.selpe-select').selectedOptions[0]?.text || '',
                         bellik: row.querySelector('td:nth-child(8) input').value,
                         meterSquare: row.querySelector('.meter-square')?.textContent || '0.00',
+                        areaPrice: areaPrice,
+                        selpePrice: selpePrice,
                         price: rowPrice,
                         isWeranda: row.getAttribute('data-weranda') === 'true',
                         werandaType: row.getAttribute('data-weranda-type') || '',

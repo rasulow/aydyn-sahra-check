@@ -202,7 +202,7 @@ def update_wallet(request):
         
         # Update client's wallet (add 3 * total_area)
         if total_area > 0:
-            wallet_increase = total_area * 3
+            wallet_increase = total_area
             client.wallet += wallet_increase
             client.save()
             

@@ -533,6 +533,17 @@ textarea:focus {
     color: #4facfe;
     font-size: 0.8rem;
     min-width: 35px;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* First column with row number and remove button */
+.order-table tbody td:first-child {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
 }
 
 /* Column width controls */
@@ -644,7 +655,7 @@ textarea:focus {
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    margin: 0 auto;
+    flex-shrink: 0;
 }
 
 .remove-row-btn:hover {

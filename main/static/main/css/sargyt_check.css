@@ -452,6 +452,12 @@ textarea:focus {
     letter-spacing: 0.3px;
 }
 
+/* Actions column header and cells */
+.order-table th:last-child,
+.order-table td:last-child {
+    text-align: center;
+}
+
 .order-table td {
     padding: 6px;
     border: 1px solid #e0e0e0;
@@ -533,17 +539,6 @@ textarea:focus {
     color: #4facfe;
     font-size: 0.8rem;
     min-width: 35px;
-    display: inline-block;
-    margin-right: 8px;
-}
-
-/* First column with row number and remove button */
-.order-table tbody td:first-child {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px;
 }
 
 /* Column width controls */
@@ -655,7 +650,7 @@ textarea:focus {
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    flex-shrink: 0;
+    margin: 0 auto;
 }
 
 .remove-row-btn:hover {
@@ -1307,9 +1302,7 @@ textarea:focus {
 .order-table th:nth-child(9),
 .order-table td:nth-child(9),
 .order-table th:nth-child(10),
-.order-table td:nth-child(10),
-.order-table th:nth-child(11),
-.order-table td:nth-child(11) {
+.order-table td:nth-child(10) {
     display: none;
 }
 

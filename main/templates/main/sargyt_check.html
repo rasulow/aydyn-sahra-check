@@ -47,14 +47,12 @@
                         <th>Bellik</th>
                         <th>m²</th>
                         <th class="price-header">Price</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="table-body">
                     <tr class="table-row" data-row-number="1">
-                        <td>
-                            <span class="row-number">1</span>
-                            <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
-                        </td>
+                        <td class="row-number">1</td>
                         <td><input type="number" class="table-input" step="0.01" placeholder="0.00"></td>
                         <td><input type="number" class="table-input" step="0.01" placeholder="0.00"></td>
                         <td>
@@ -82,6 +80,9 @@
                         <td><input type="text" class="table-input" placeholder="Примечание"></td>
                         <td class="meter-square">0.00</td>
                         <td class="row-price">0.00</td>
+                        <td>
+                            <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -485,11 +486,20 @@
                         // Calculate area-based price
                         area = ini * boyy;
                         
-                        // General rule: if area < 1, set to 1
-                        if (area < 1) {
-                            area = 1;
+                        // Special rule for category ID 6
+                        if (categoryId === 6) {
+                            if (area < 0.7) {
+                                area = 0.7;
+                            } else if (area >= 0.7 && area < 1) {
+                                area = 1;
+                            }
+                            // If area >= 1, use real value
+                        } else {
+                            // General rule: if area < 1, set to 1
+                            if (area < 1) {
+                                area = 1;
+                            }
                         }
-                        // Special rule for category ID 6: if 0.7 <= area < 1, round to 1 (already handled by general rule above)
                         
                         calculatedPrice = area * selectedPrice;
                     } else {
@@ -1092,10 +1102,7 @@
             }
             
             newRow.innerHTML = `
-                <td>
-                    <span class="row-number">${displayNumber}</span>
-                    <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
-                </td>
+                <td class="row-number">${displayNumber}</td>
                 <td><input type="number" class="table-input" step="0.01" placeholder="0.00"></td>
                 <td><input type="number" class="table-input" step="0.01" placeholder="0.00"></td>
                 <td>
@@ -1123,6 +1130,9 @@
                 <td><input type="text" class="table-input" placeholder="Примечание"></td>
                 <td class="meter-square">0.00</td>
                 <td class="row-price">0.00</td>
+                <td>
+                    <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
+                </td>
             `;
             
             tableBody.appendChild(newRow);
@@ -2055,6 +2065,7 @@
                     let areaPrice = 0; // Price from area calculation only
                     let selpePrice = 0; // Selpe price only
                     let kodRenkPrice = 0; // Kod renk base price (for Excel export)
+                    let calculatedArea = 0; // Calculated area for Excel export
                     
                     // Calculate area price (or ini-based if boyy is null)
                     if (ini && kodRenkCode) {
@@ -2086,15 +2097,27 @@
                                 // Calculate area-based price
                                 let area = ini * boyy;
                                 
-                                // General rule: if area < 1, set to 1
-                                if (area < 1) {
-                                    area = 1;
+                                // Special rule for category ID 6
+                                if (categoryId === 6) {
+                                    if (area < 0.7) {
+                                        area = 0.7;
+                                    } else if (area >= 0.7 && area < 1) {
+                                        area = 1;
+                                    }
+                                    // If area >= 1, use real value
+                                } else {
+                                    // General rule: if area < 1, set to 1
+                                    if (area < 1) {
+                                        area = 1;
+                                    }
                                 }
                                 
+                                calculatedArea = area; // Store calculated area
                                 areaPrice = area * selectedPrice;
                             } else {
                                 // If boyy is null, multiply ini by price
                                 areaPrice = ini * selectedPrice;
+                                calculatedArea = 0; // No area when boyy is null
                             }
                         }
                     }
@@ -2120,7 +2143,7 @@
                         kodRenk: row.querySelector('.kodrenk-search').value,
                         selpe: row.querySelector('.selpe-select').selectedOptions[0]?.text || '',
                         bellik: row.querySelector('td:nth-child(8) input').value,
-                        meterSquare: row.querySelector('.meter-square')?.textContent || '0.00',
+                        meterSquare: calculatedArea > 0 ? calculatedArea.toFixed(2) : '0.00',
                         areaPrice: areaPrice,
                         kodRenkPrice: kodRenkPrice, // Base price for Excel export
                         selpePrice: selpePrice,

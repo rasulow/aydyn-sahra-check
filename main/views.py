@@ -55,8 +55,6 @@ def sargyt_check(request):
             'code': color.kod,
             'category_id': color.category.id if color.category else None,
             'category_name': color.category.name if color.category else None,
-            'mary_diller_USD': float(color.mary_diller_USD) if color.mary_diller_USD else 0,
-            'mary_diller_TMT': float(color.mary_diller_TMT) if color.mary_diller_TMT else 0,
             'diller_USD': float(color.diller_USD) if color.diller_USD else 0,
             'diller_TMT': float(color.diller_TMT) if color.diller_TMT else 0,
             'bez_ustanowka_USD': float(color.bez_ustanowka_USD) if color.bez_ustanowka_USD else 0,

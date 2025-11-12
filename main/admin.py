@@ -117,7 +117,7 @@ class ClientTypeAdmin(unfold_admin.ModelAdmin):
 
 @admin.register(Color)
 class ColorAdmin(unfold_admin.ModelAdmin):
-    list_display = ('id', 'kod', 'category', 'mary_diller_USD', 'mary_diller_TMT', 'formatted_created_at', 'formatted_updated_at')
+    list_display = ('id', 'kod', 'category', 'formatted_created_at', 'formatted_updated_at')
     list_display_links = ('id', 'kod')
     search_fields = ('kod', 'category__name')
     list_filter = ('category', 'created_at', 'updated_at')
@@ -139,10 +139,6 @@ class ColorAdmin(unfold_admin.ModelAdmin):
     fieldsets = (
         ('Информация о цвете', {
             'fields': ('kod', 'category')
-        }),
-        ('Mary diller', {
-            'fields': ('mary_diller_USD', 'mary_diller_TMT'),
-            'classes': ('collapse',)
         }),
         ('Diller', {
             'fields': ('diller_USD', 'diller_TMT'),

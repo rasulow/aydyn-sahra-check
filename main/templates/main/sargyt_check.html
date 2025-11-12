@@ -59,7 +59,6 @@
                             <select class="table-select karniz-select">
                                 <option value="">Выберите...</option>
                                 <option value="mata">Dine mata</option>
-                                <option value="karniz_komplekt">Karniz komplekt</option>
                             </select>
                         </td>
                         <td>
@@ -460,15 +459,11 @@
                         priceTMT = colorData.mata_TMT || 0;
                     } else {
                         // Determine which price to use based on client type ID
-                        // 1 -> diller, 2 -> mary diller, 3 -> bez ustanowka
+                        // 1 -> diller, 3 -> bez ustanowka
                         if (clientType === 1) {
                             // ID 1: diller
                             priceUSD = colorData.diller_USD || 0;
                             priceTMT = colorData.diller_TMT || 0;
-                        } else if (clientType === 2) {
-                            // ID 2: mary diller
-                            priceUSD = colorData.mary_diller_USD || 0;
-                            priceTMT = colorData.mary_diller_TMT || 0;
                         } else if (clientType === 3) {
                             // ID 3: bez ustanowka
                             priceUSD = colorData.bez_ustanowka_USD || 0;
@@ -506,11 +501,12 @@
                 }
             }
             
-            // Add Selpe price if selected
+            // Add Selpe price if selected (multiply by ini)
             if (selpeId) {
                 const selpeData = selpeOptions.find(s => s.id === selpeId);
                 if (selpeData) {
-                    totalPrice += currency === 'USD' ? (selpeData.price_USD || 0) : (selpeData.price_TMT || 0);
+                    const selpePrice = currency === 'USD' ? (selpeData.price_USD || 0) : (selpeData.price_TMT || 0);
+                    totalPrice += ini * selpePrice;
                 }
             }
             
@@ -768,58 +764,24 @@
             placeholderOption.textContent = 'Выберите...';
             selectElement.appendChild(placeholderOption);
             
-            // Add static "mata" option
-            const mataOption = document.createElement('option');
-            mataOption.value = 'mata';
-            mataOption.textContent = 'Dine mata';
-            selectElement.appendChild(mataOption);
-            
-            // Add static "Karniz komplekt" option as second
-            const komplektOption = document.createElement('option');
-            komplektOption.value = 'karniz_komplekt';
-            komplektOption.textContent = 'Karniz komplekt';
-            selectElement.appendChild(komplektOption);
-            
-            // Add karniz options from database
+            // Add karniz options from database (at the top, after placeholder)
             karnizOptions.forEach(karniz => {
                 const option = document.createElement('option');
                 option.value = karniz.id;
                 option.textContent = karniz.name;
                 selectElement.appendChild(option);
             });
+            
+            // Add static "mata" option (always last)
+            const mataOption = document.createElement('option');
+            mataOption.value = 'mata';
+            mataOption.textContent = 'Dine mata';
+            selectElement.appendChild(mataOption);
         }
         
-        // Handle karniz selection change to disable/enable fields
+        // Handle karniz selection change
         function handleKarnizChange(karnizSelect) {
             const row = karnizSelect.closest('tr');
-            const categorySelect = row.querySelector('.category-select');
-            const kodRenkInput = row.querySelector('.kodrenk-search');
-            const selpeSelect = row.querySelector('.selpe-select');
-            
-            if (karnizSelect.value === 'karniz_komplekt') {
-                // Disable category, kod renk, and selpe
-                categorySelect.disabled = true;
-                categorySelect.value = '';
-                kodRenkInput.disabled = true;
-                kodRenkInput.value = '';
-                selpeSelect.disabled = true;
-                selpeSelect.value = '';
-                
-                // Add visual styling for disabled state
-                categorySelect.style.backgroundColor = '#f0f0f0';
-                kodRenkInput.style.backgroundColor = '#f0f0f0';
-                selpeSelect.style.backgroundColor = '#f0f0f0';
-            } else {
-                // Enable category, kod renk, and selpe
-                categorySelect.disabled = false;
-                kodRenkInput.disabled = false;
-                selpeSelect.disabled = false;
-                
-                // Remove visual styling
-                categorySelect.style.backgroundColor = '';
-                kodRenkInput.style.backgroundColor = '';
-                selpeSelect.style.backgroundColor = '';
-            }
             
             // Update table totals when karniz changes (affects price calculation)
             const tableContainer = row.closest('.table-container');
@@ -1121,7 +1083,6 @@
                     <select class="table-select karniz-select">
                         <option value="">Выберите...</option>
                         <option value="mata">Dine mata</option>
-                        <option value="karniz_komplekt">Karniz komplekt</option>
                     </select>
                 </td>
                 <td>
@@ -2092,9 +2053,6 @@
                                 if (clientType === 1) {
                                     priceUSD = colorData.diller_USD || 0;
                                     priceTMT = colorData.diller_TMT || 0;
-                                } else if (clientType === 2) {
-                                    priceUSD = colorData.mary_diller_USD || 0;
-                                    priceTMT = colorData.mary_diller_TMT || 0;
                                 } else if (clientType === 3) {
                                     priceUSD = colorData.bez_ustanowka_USD || 0;
                                     priceTMT = colorData.bez_ustanowka_TMT || 0;
@@ -2117,11 +2075,12 @@
                         }
                     }
                     
-                    // Calculate selpe price
+                    // Calculate selpe price (multiply by ini)
                     if (selpeId) {
                         const selpeData = selpeOptions.find(s => s.id === selpeId);
                         if (selpeData) {
-                            selpePrice = currency === 'USD' ? (selpeData.price_USD || 0) : (selpeData.price_TMT || 0);
+                            const baseSelpePrice = currency === 'USD' ? (selpeData.price_USD || 0) : (selpeData.price_TMT || 0);
+                            selpePrice = ini * baseSelpePrice;
                         }
                     }
                     

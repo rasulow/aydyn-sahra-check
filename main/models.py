@@ -59,8 +59,6 @@ class Client(models.Model):
 class Color(models.Model):
     kod = models.CharField(max_length=100)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True)
-    mary_diller_USD = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
-    mary_diller_TMT = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
     diller_USD = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
     diller_TMT = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)
     bez_ustanowka_USD = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, blank=True, null=True)

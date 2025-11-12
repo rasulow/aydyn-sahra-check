@@ -966,26 +966,56 @@
         // Function to add new row - opens modal
         function addNewRow() {
             const modal = document.getElementById('weranda-modal');
+            // Reset modal title and question for new row
+            const modalTitle = modal.querySelector('.modal-title');
+            const modalQuestion = modal.querySelector('.modal-question');
+            modalTitle.textContent = 'Добавить строку';
+            modalQuestion.textContent = 'Это Weranda?';
+            modal.removeAttribute('data-context'); // Remove context for row (default behavior)
             modal.classList.add('show');
         }
 
         // Handle Yes button click
         function handleWerandaYes() {
-            document.getElementById('weranda-options').style.display = 'block';
-            document.querySelector('.modal-buttons').style.display = 'none';
-            isWerandaRow = true;
+            const modal = document.getElementById('weranda-modal');
+            const context = modal.getAttribute('data-context');
+            
+            if (context === 'new-table') {
+                // For new table, show weranda type options
+                document.getElementById('weranda-options').style.display = 'block';
+                document.querySelector('.modal-buttons').style.display = 'none';
+            } else {
+                // For new row, show weranda type options
+                document.getElementById('weranda-options').style.display = 'block';
+                document.querySelector('.modal-buttons').style.display = 'none';
+                isWerandaRow = true;
+            }
         }
 
         // Handle No button click
         function handleWerandaNo() {
-            isWerandaRow = false;
-            currentWerandaType = null;
-            closeWerandaModal();
-            actuallyAddNewRow();
+            const modal = document.getElementById('weranda-modal');
+            const context = modal.getAttribute('data-context');
+            
+            if (context === 'new-table') {
+                // For new table, proceed to user data modal
+                isWerandaRow = false;
+                currentWerandaType = null;
+                closeWerandaModal();
+                openUserDataModalForNewTable();
+            } else {
+                // For new row, add row normally
+                isWerandaRow = false;
+                currentWerandaType = null;
+                closeWerandaModal();
+                actuallyAddNewRow();
+            }
         }
 
         // Confirm Weranda row with type
         function confirmWerandaRow() {
+            const modal = document.getElementById('weranda-modal');
+            const context = modal.getAttribute('data-context');
             const werandaTypeSelect = document.getElementById('weranda-type-select');
             currentWerandaType = werandaTypeSelect.value;
             
@@ -994,8 +1024,17 @@
                 return;
             }
             
-            closeWerandaModal();
-            actuallyAddNewRow();
+            if (context === 'new-table') {
+                // For new table, proceed to user data modal
+                isWerandaRow = true;
+                closeWerandaModal();
+                openUserDataModalForNewTable();
+            } else {
+                // For new row, add row with weranda
+                isWerandaRow = true;
+                closeWerandaModal();
+                actuallyAddNewRow();
+            }
         }
 
         // Close modal
@@ -1006,6 +1045,14 @@
             // Reset modal state
             document.getElementById('weranda-options').style.display = 'none';
             document.querySelector('.modal-buttons').style.display = 'flex';
+            document.getElementById('weranda-type-select').value = '';
+            modal.removeAttribute('data-context');
+            
+            // Reset modal title and question to default
+            const modalTitle = modal.querySelector('.modal-title');
+            const modalQuestion = modal.querySelector('.modal-question');
+            modalTitle.textContent = 'Добавить строку';
+            modalQuestion.textContent = 'Это Weranda?';
             document.getElementById('weranda-type-select').selectedIndex = 0;
         }
 
@@ -1240,8 +1287,20 @@
 
         // Function to add new table - opens modal for user data
         function addNewTable() {
-            // Open modal to get user data for new table
-            openUserDataModalForNewTable();
+            // First ask if it's weranda, then get user data
+            openWerandaModalForNewTable();
+        }
+        
+        // Open weranda modal for new table
+        function openWerandaModalForNewTable() {
+            const modal = document.getElementById('weranda-modal');
+            // Change modal title and question for new table
+            const modalTitle = modal.querySelector('.modal-title');
+            const modalQuestion = modal.querySelector('.modal-question');
+            modalTitle.textContent = 'Добавить заказ';
+            modalQuestion.textContent = 'Это Weranda?';
+            modal.setAttribute('data-context', 'new-table');
+            modal.classList.add('show');
         }
         
         // Open user data modal for new table
@@ -1338,6 +1397,15 @@
             // Set client ID on the new table
             newTableContainer.setAttribute('data-client-id', modalSelectedUser.id);
             console.log('Set client ID on new table', newTableNumber, ':', modalSelectedUser.id);
+            
+            // Store weranda information for the new table
+            if (isWerandaRow && currentWerandaType) {
+                newTableContainer.setAttribute('data-weranda', 'true');
+                newTableContainer.setAttribute('data-weranda-type', currentWerandaType);
+                console.log('Set weranda info on new table', newTableNumber, ':', currentWerandaType);
+            } else {
+                newTableContainer.setAttribute('data-weranda', 'false');
+            }
             
             // Get all rows in the new table and keep only the first one
             const newTableBody = newTableContainer.querySelector('[id^="table-body"]');
@@ -2003,7 +2071,7 @@
                     row.bellik || '',
                     row.meterSquare || '0.00',
                     row.kodRenkPrice ? row.kodRenkPrice.toFixed(2) : '0.00',
-                    row.selpePrice ? row.selpePrice.toFixed(2) : '0.00',
+                    row.baseSelpePrice ? row.baseSelpePrice.toFixed(2) : '0.00',
                     row.price ? row.price.toFixed(2) : '0.00'
                 ]);
             });
@@ -2063,7 +2131,8 @@
                     const selpeId = selpeSelect ? parseInt(selpeSelect.value) : null;
                     
                     let areaPrice = 0; // Price from area calculation only
-                    let selpePrice = 0; // Selpe price only
+                    let selpePrice = 0; // Selpe price only (total: ini * base price)
+                    let baseSelpePrice = 0; // Base selpe price (for Excel export)
                     let kodRenkPrice = 0; // Kod renk base price (for Excel export)
                     let calculatedArea = 0; // Calculated area for Excel export
                     
@@ -2126,7 +2195,7 @@
                     if (selpeId) {
                         const selpeData = selpeOptions.find(s => s.id === selpeId);
                         if (selpeData) {
-                            const baseSelpePrice = currency === 'USD' ? (selpeData.price_USD || 0) : (selpeData.price_TMT || 0);
+                            baseSelpePrice = currency === 'USD' ? (selpeData.price_USD || 0) : (selpeData.price_TMT || 0);
                             selpePrice = ini * baseSelpePrice;
                         }
                     }
@@ -2146,7 +2215,8 @@
                         meterSquare: calculatedArea > 0 ? calculatedArea.toFixed(2) : '0.00',
                         areaPrice: areaPrice,
                         kodRenkPrice: kodRenkPrice, // Base price for Excel export
-                        selpePrice: selpePrice,
+                        selpePrice: selpePrice, // Total selpe price (for calculation)
+                        baseSelpePrice: baseSelpePrice, // Base selpe price (for Excel export)
                         price: rowPrice,
                         isWeranda: row.getAttribute('data-weranda') === 'true',
                         werandaType: row.getAttribute('data-weranda-type') || '',

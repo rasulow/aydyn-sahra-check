@@ -486,22 +486,29 @@
                         // Calculate area-based price
                         area = ini * boyy;
                         
-                        // Special rule for category ID 6
-                        if (categoryId === 6) {
-                            if (area < 0.7) {
-                                area = 0.7;
-                            } else if (area >= 0.7 && area < 1) {
-                                area = 1;
-                            }
-                            // If area >= 1, use real value
+                        // For dine mata, use exact area calculation without adjustments
+                        if (karnizValue === 'mata') {
+                            // Use raw area (height * width) * mata price
+                            calculatedPrice = area * selectedPrice;
                         } else {
-                            // General rule: if area < 1, set to 1
-                            if (area < 1) {
-                                area = 1;
+                            // Apply area adjustment rules for non-mata items
+                            // Special rule for category ID 6
+                            if (categoryId === 6) {
+                                if (area < 0.7) {
+                                    area = 0.7;
+                                } else if (area >= 0.7 && area < 1) {
+                                    area = 1;
+                                }
+                                // If area >= 1, use real value
+                            } else {
+                                // General rule: if area < 1, set to 1
+                                if (area < 1) {
+                                    area = 1;
+                                }
                             }
+                            
+                            calculatedPrice = area * selectedPrice;
                         }
-                        
-                        calculatedPrice = area * selectedPrice;
                     } else {
                         // If boyy is null, multiply ini by price
                         calculatedPrice = ini * selectedPrice;
@@ -2166,23 +2173,31 @@
                                 // Calculate area-based price
                                 let area = ini * boyy;
                                 
-                                // Special rule for category ID 6
-                                if (categoryId === 6) {
-                                    if (area < 0.7) {
-                                        area = 0.7;
-                                    } else if (area >= 0.7 && area < 1) {
-                                        area = 1;
-                                    }
-                                    // If area >= 1, use real value
+                                // For dine mata, use exact area calculation without adjustments
+                                if (karnizValue === 'mata') {
+                                    // Use raw area (height * width) * mata price
+                                    calculatedArea = area; // Store calculated area
+                                    areaPrice = area * selectedPrice;
                                 } else {
-                                    // General rule: if area < 1, set to 1
-                                    if (area < 1) {
-                                        area = 1;
+                                    // Apply area adjustment rules for non-mata items
+                                    // Special rule for category ID 6
+                                    if (categoryId === 6) {
+                                        if (area < 0.7) {
+                                            area = 0.7;
+                                        } else if (area >= 0.7 && area < 1) {
+                                            area = 1;
+                                        }
+                                        // If area >= 1, use real value
+                                    } else {
+                                        // General rule: if area < 1, set to 1
+                                        if (area < 1) {
+                                            area = 1;
+                                        }
                                     }
+                                    
+                                    calculatedArea = area; // Store calculated area
+                                    areaPrice = area * selectedPrice;
                                 }
-                                
-                                calculatedArea = area; // Store calculated area
-                                areaPrice = area * selectedPrice;
                             } else {
                                 // If boyy is null, multiply ini by price
                                 areaPrice = ini * selectedPrice;

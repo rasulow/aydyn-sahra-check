@@ -202,10 +202,11 @@ def update_wallet(request):
                 total_area += item_area
                 
                 # If meter square is bigger than 0 and less than 1, add 3 to wallet
+                # Otherwise, add area * 3 to wallet
                 if item_area > 0 and item_area < 1:
                     wallet_increase += Decimal('3.0')
-                else:
-                    wallet_increase += item_area
+                elif item_area >= 1:
+                    wallet_increase += item_area * Decimal('3.0')
             except (TypeError, ValueError, Decimal.InvalidOperation):
                 continue
         

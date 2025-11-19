@@ -191,18 +191,26 @@ def update_wallet(request):
         
         # Calculate total area from order items
         total_area = Decimal('0.0')
+        wallet_increase = Decimal('0.0')
+        
         for item in order_items:
             try:
                 width = Decimal(str(item.get('width', 0)))
                 height = Decimal(str(item.get('height', 0)))
                 quantity = Decimal(str(item.get('quantity', 1)))
-                total_area += width * height * quantity
+                item_area = width * height * quantity
+                total_area += item_area
+                
+                # If meter square is bigger than 0 and less than 1, add 3 to wallet
+                if item_area > 0 and item_area < 1:
+                    wallet_increase += Decimal('3.0')
+                else:
+                    wallet_increase += item_area
             except (TypeError, ValueError, Decimal.InvalidOperation):
                 continue
         
-        # Update client's wallet (add 3 * total_area)
-        if total_area > 0:
-            wallet_increase = total_area
+        # Update client's wallet
+        if wallet_increase > 0:
             client.wallet += wallet_increase
             client.save()
             

@@ -149,7 +149,7 @@
                 <div class="selection-group">
                     <label for="modal-currency-select">Валюта:</label>
                     <select id="modal-currency-select" class="region-select">
-                        <option value="USD">USD</option>
+                        <option value="USD">$</option>
                         <option value="TMT">TMT</option>
                     </select>
                 </div>
@@ -540,7 +540,7 @@
                 if (currency === 'USD') {
                     rowPriceCell.textContent = '$' + totalPrice.toFixed(2);
                 } else {
-                    rowPriceCell.textContent = totalPrice.toFixed(2) + ' TMT';
+                    rowPriceCell.textContent = Math.round(totalPrice) + ' TMT';
                 }
             }
             
@@ -572,18 +572,20 @@
                 if (currency === 'USD') {
                     totalDisplay.textContent = '$' + total.toFixed(2);
                 } else {
-                    totalDisplay.textContent = total.toFixed(2) + ' TMT';
+                    totalDisplay.textContent = Math.round(total) + ' TMT';
                 }
             }
             
             if (totalLabel) {
-                totalLabel.textContent = `Итого (${currency}):`;
+                const currencyDisplay = currency === 'USD' ? '$' : currency;
+                totalLabel.textContent = `Итого (${currencyDisplay}):`;
             }
             
             // Update table header
             const priceHeader = tableContainer.querySelector('.price-header');
             if (priceHeader) {
-                priceHeader.textContent = `Price (${currency})`;
+                const currencyDisplay = currency === 'USD' ? '$' : currency;
+                priceHeader.textContent = `Price (${currencyDisplay})`;
             }
         }
         
@@ -2062,9 +2064,10 @@
             
             // Get currency for this order
             const currency = userData && userData.currency ? userData.currency : 'USD';
+            const currencyDisplay = currency === 'USD' ? '$' : currency;
             
             // Add table headers (11 columns now - added m² Price and Selpe baha)
-            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'm²', `m² Price (${currency})`, 'Selpe baha', `Total Price (${currency})`]);
+            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'm²', `m² Price (${currencyDisplay})`, 'Selpe baha', `Total Price (${currencyDisplay})`]);
             
             // Add rows (ensure all have 11 columns)
             order.rows.forEach(row => {
@@ -2077,15 +2080,15 @@
                     row.selpe || '',
                     row.bellik || '',
                     row.meterSquare || '0.00',
-                    row.kodRenkPrice ? row.kodRenkPrice.toFixed(2) : '0.00',
-                    row.baseSelpePrice ? row.baseSelpePrice.toFixed(2) : '0.00',
-                    row.price ? row.price.toFixed(2) : '0.00'
+                    row.kodRenkPrice ? (currency === 'TMT' ? Math.round(row.kodRenkPrice).toString() : row.kodRenkPrice.toFixed(2)) : '0.00',
+                    row.baseSelpePrice ? (currency === 'TMT' ? Math.round(row.baseSelpePrice).toString() : row.baseSelpePrice.toFixed(2)) : '0.00',
+                    row.price ? (currency === 'TMT' ? Math.round(row.price).toString() : row.price.toFixed(2)) : '0.00'
                 ]);
             });
             
             // Add total price (11 columns: 8 empty + merged cell with label and value)
-            const totalValue = order.total ? order.total.toFixed(2) : '0.00';
-            const totalText = `ИТОГО (${currency}): ${totalValue}`;
+            const totalValue = order.total ? (currency === 'TMT' ? Math.round(order.total).toString() : order.total.toFixed(2)) : '0.00';
+            const totalText = `ИТОГО (${currencyDisplay}): ${totalValue}`;
             data.push(['', '', '', '', '', '', '', '', '', totalText, '']);
             
             return data;

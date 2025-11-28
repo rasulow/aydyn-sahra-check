@@ -89,9 +89,12 @@
             
             <!-- Total Price Display -->
             <div class="total-price-container">
-                <div class="total-price-row">
-                    <span class="total-price-label">Итого:</span>
-                    <span class="total-price-value">0.00</span>
+                <div class="total-price-row" style="display: flex; align-items: center; gap: 15px; justify-content: flex-end;">
+                    <input type="text" class="extra-field" value="" placeholder="" style="border: 1px solid #ddd; padding: 8px 12px; font-size: 16px; text-align: right; min-width: 120px; border-radius: 4px;">
+                    <span style="font-size: 16px; font-weight: 500;">Awans:</span>
+                    <input type="text" class="awans-value" value="" placeholder="0.00" style="border: 1px solid #ddd; padding: 8px 12px; font-size: 16px; text-align: right; min-width: 120px; border-radius: 4px;">
+                    <span class="total-price-label" style="font-size: 18px; font-weight: 600; margin-left: 10px;">Итого:</span>
+                    <input type="text" class="total-price-value" value="0.00" style="border: 1px solid #ddd; padding: 8px 12px; font-size: 18px; font-weight: bold; text-align: right; min-width: 150px; border-radius: 4px;">
                 </div>
             </div>
             
@@ -570,9 +573,9 @@
             
             if (totalDisplay) {
                 if (currency === 'USD') {
-                    totalDisplay.textContent = '$' + total.toFixed(2);
+                    totalDisplay.value = '$' + total.toFixed(2);
                 } else {
-                    totalDisplay.textContent = Math.round(total) + ' TMT';
+                    totalDisplay.value = Math.round(total) + ' TMT';
                 }
             }
             
@@ -656,7 +659,16 @@
             userDataDisplay.innerHTML = `
                 <div class="user-data-row">
                     <span class="user-data-label">User:</span>
-                    <span class="user-data-value">${userData.user.name}</span>
+                    <div class="user-select-container" style="position: relative; flex: 1;">
+                        <input type="text" class="user-search-input" 
+                               value="${userData.user.name}" 
+                               placeholder="Search user..."
+                               style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                               data-table-number="${tableNumber}">
+                        <div class="user-search-dropdown" 
+                             style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; margin-top: 2px;">
+                        </div>
+                    </div>
                 </div>
                 <div class="user-data-row">
                     <span class="user-data-label">Region:</span>
@@ -667,6 +679,116 @@
                     <span class="user-data-value">${userData.currency}</span>
                 </div>
             `;
+            
+            // Setup user search functionality for this table
+            setupUserSearch(tableContainer, tableNumber);
+        }
+
+        // Setup user search for table
+        function setupUserSearch(tableContainer, tableNumber) {
+            const searchInput = tableContainer.querySelector('.user-search-input');
+            const dropdown = tableContainer.querySelector('.user-search-dropdown');
+            
+            if (!searchInput || !dropdown) return;
+            
+            // Show dropdown on focus
+            searchInput.addEventListener('focus', function() {
+                filterAndShowUsers(searchInput.value, dropdown, tableContainer, tableNumber);
+                dropdown.style.display = 'block';
+            });
+            
+            // Filter on input
+            searchInput.addEventListener('input', function() {
+                filterAndShowUsers(searchInput.value, dropdown, tableContainer, tableNumber);
+            });
+            
+            // Hide dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
+        
+        // Filter and show users in table dropdown
+        function filterAndShowUsers(searchTerm, dropdown, tableContainer, tableNumber) {
+            const filtered = users.filter(user => 
+                user.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            dropdown.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div style="padding: 10px; color: #999;">Пользователи не найдены</div>';
+            } else {
+                filtered.forEach(user => {
+                    const item = document.createElement('div');
+                    item.className = 'user-dropdown-item';
+                    item.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;';
+                    item.innerHTML = `
+                        <div style="font-weight: 500;">${user.name}</div>
+                        <div style="font-size: 12px; color: #666;">${user.region || ''}</div>
+                    `;
+                    
+                    // Hover effect
+                    item.addEventListener('mouseenter', function() {
+                        this.style.backgroundColor = '#f0f0f0';
+                    });
+                    item.addEventListener('mouseleave', function() {
+                        this.style.backgroundColor = 'white';
+                    });
+                    
+                    // On click, select user
+                    item.addEventListener('click', function() {
+                        selectUserForTable(user, tableContainer, tableNumber);
+                        dropdown.style.display = 'none';
+                    });
+                    
+                    dropdown.appendChild(item);
+                });
+            }
+        }
+        
+        // Select user for a specific table
+        function selectUserForTable(user, tableContainer, tableNumber) {
+            // Update the search input
+            const searchInput = tableContainer.querySelector('.user-search-input');
+            if (searchInput) {
+                searchInput.value = user.name;
+            }
+            
+            // Update client ID on table
+            tableContainer.setAttribute('data-client-id', user.id);
+            
+            // Update current table user data
+            const clientType = user.type || 2;
+            const currency = user.currency || 'USD';
+            const region = user.region || '';
+            
+            currentTableUserData[tableNumber] = {
+                user: user,
+                region: region,
+                currency: currency,
+                clientType: clientType
+            };
+            
+            // Update region and currency display
+            const regionValue = tableContainer.querySelector('.user-data-row:nth-child(2) .user-data-value');
+            const currencyValue = tableContainer.querySelector('.user-data-row:nth-child(3) .user-data-value');
+            
+            if (regionValue) regionValue.textContent = region;
+            if (currencyValue) currencyValue.textContent = currency;
+            
+            // Recalculate all rows with new client type and currency
+            const rows = tableContainer.querySelectorAll('.table-row');
+            rows.forEach(row => {
+                calculateAndUpdatePrice(row, clientType, currency);
+            });
+            
+            // Update total
+            updateTotalPrice(tableContainer, clientType, currency);
+            
+            console.log(`Changed client for table ${tableNumber} to:`, user.name, user.id);
         }
 
         // Filter and display users based on search (for modal)
@@ -1464,9 +1586,15 @@
                 setupCategoryChangeListener(select);
             });
             
-            // Reset total prices for the new table
+            // Reset total prices and awans fields for the new table
             const totalDisplay = newTableContainer.querySelector('.total-price-value');
-            if (totalDisplay) totalDisplay.textContent = '0.00';
+            if (totalDisplay) totalDisplay.value = '0.00';
+            
+            const awansInput = newTableContainer.querySelector('.awans-value');
+            if (awansInput) awansInput.value = '';
+            
+            const extraField = newTableContainer.querySelector('.extra-field');
+            if (extraField) extraField.value = '';
             
             // Setup calculation listeners for all rows in the new table
             const newTableRows = newTableBody.querySelectorAll('tr');
@@ -1575,9 +1703,12 @@
                     rows.forEach(row => {
                         const width = parseFloat(row.querySelector('td:nth-child(2) input')?.value) || 0;
                         const height = parseFloat(row.querySelector('td:nth-child(3) input')?.value) || 0;
+                        const karnizSelect = row.querySelector('.karniz-select');
+                        const karnizValue = karnizSelect ? karnizSelect.value : '';
                         const quantity = 3; // Fixed quantity of 3 as per the requirement
                         
-                        if (width > 0 && height > 0) {
+                        // Skip wallet update for "dine mata" orders
+                        if (width > 0 && height > 0 && karnizValue !== 'mata') {
                             orderItems.push({
                                 width: width,
                                 height: height,
@@ -1621,17 +1752,13 @@
                     // Add page break after each order (except the last one)
                     if (index < formData.orders.length - 1) {
                         pageBreaks.push(currentRow);
-                        // Add spacing between orders
-                        allOrdersData.push([]);
-                        allOrdersData.push([]);
-                        currentRow += 2;
                     }
                 });
                 
                 // Create worksheet from combined data
                 const ws = XLSX.utils.aoa_to_sheet(allOrdersData);
                 
-                // Set column widths (11 columns now)
+                // Set column widths (12 columns now)
                 ws['!cols'] = [
                     {wch: 6},  // №
                     {wch: 8},  // Ini
@@ -1640,6 +1767,7 @@
                     {wch: 12}, // Kod Renk
                     {wch: 10}, // Selpe
                     {wch: 18}, // Bellik
+                    {wch: 10}, // Ostatok
                     {wch: 8},  // m²
                     {wch: 14}, // m² Price (USD or TMT)
                     {wch: 12}, // Selpe baha
@@ -1681,16 +1809,15 @@
                     const headerRow = 1;
                     const dataRows = order.rows.length;
                     const totalRows = 1; // Only one ИТОГО row now
-                    const spacingRows = index < formData.orders.length - 1 ? 2 : 0;
                     
-                    // Merge total row cells (columns 9-10) for "ИТОГО (currency): value"
+                    // Merge total row cells (columns 10-11) for "ИТОГО (currency): value"
                     const totalRowIndex = rowOffset + headerInfoRows + headerRow + dataRows;
                     ws['!merges'].push({
-                        s: { r: totalRowIndex, c: 9 },
-                        e: { r: totalRowIndex, c: 10 }
+                        s: { r: totalRowIndex, c: 10 },
+                        e: { r: totalRowIndex, c: 11 }
                     });
                     
-                    rowOffset += headerInfoRows + headerRow + dataRows + totalRows + spacingRows;
+                    rowOffset += headerInfoRows + headerRow + dataRows + totalRows;
                 });
                 
                 // Set print options for better page layout
@@ -1785,7 +1912,7 @@
                 
                 // Style combined title and user info row
                 // Row structure: ЗАКАЗ №X (0-1) | User: (2) | Name (3-4) | Region: (5) | Region value (6)
-                for (let col = 0; col < 11; col++) {
+                for (let col = 0; col < 12; col++) {
                     const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
                     if (ws[cellRef]) {
                         ws[cellRef].s = {
@@ -1891,9 +2018,9 @@
                 
                 currentRow += dataRowCount;
                 
-                // Style total row (only 1 total row now, 11 columns)
-                // Columns 9-10 are merged for total
-                for (let col = 0; col <= 10; col++) {
+                // Style total row (only 1 total row now, 12 columns)
+                // Columns 10-11 are merged for total
+                for (let col = 0; col <= 11; col++) {
                     const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
                     // Create cell if it doesn't exist
                     if (!ws[cellRef]) {
@@ -1904,14 +2031,14 @@
                         font: {
                             name: 'Calibri',
                             sz: 12,
-                            bold: col >= 9, // Bold for merged total cell (columns 9-10)
-                            color: { rgb: col >= 9 ? '1A1A1A' : '2C3E50' }
+                            bold: col >= 10, // Bold for merged total cell (columns 10-11)
+                            color: { rgb: col >= 10 ? '1A1A1A' : '2C3E50' }
                         },
                         alignment: {
                             vertical: 'center',
-                            horizontal: col >= 9 ? 'right' : 'center' // Right align merged total cell
+                            horizontal: col >= 10 ? 'right' : 'center' // Right align merged total cell
                         },
-                        fill: col >= 9 ? {
+                        fill: col >= 10 ? {
                             fgColor: { rgb: 'F8F9FA' } // Light background for total
                         } : undefined
                     };
@@ -1920,11 +2047,6 @@
                 ws['!rows'] = ws['!rows'] || [];
                 ws['!rows'][currentRow] = { hpt: 25 };
                 currentRow += 1;
-                
-                // Skip empty spacing rows between orders
-                if (orderIndex < orders.length - 1) {
-                    currentRow += 2;
-                }
             });
         }
         
@@ -2066,10 +2188,10 @@
             const currency = userData && userData.currency ? userData.currency : 'USD';
             const currencyDisplay = currency === 'USD' ? '$' : currency;
             
-            // Add table headers (11 columns now - added m² Price and Selpe baha)
-            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'm²', `m² Price (${currencyDisplay})`, 'Selpe baha', `Total Price (${currencyDisplay})`]);
+            // Add table headers (12 columns now - added Ostatok after Bellik)
+            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'Ostatok', 'm²', `m² Price (${currencyDisplay})`, 'Selpe baha', `Total Price (${currencyDisplay})`]);
             
-            // Add rows (ensure all have 11 columns)
+            // Add rows (ensure all have 12 columns)
             order.rows.forEach(row => {
                 data.push([
                     row.number || '',
@@ -2079,6 +2201,7 @@
                     row.kodRenk || '',
                     row.selpe || '',
                     row.bellik || '',
+                    '', // Ostatok column (empty for now)
                     row.meterSquare || '0.00',
                     row.kodRenkPrice ? (currency === 'TMT' ? Math.round(row.kodRenkPrice).toString() : row.kodRenkPrice.toFixed(2)) : '0.00',
                     row.baseSelpePrice ? (currency === 'TMT' ? Math.round(row.baseSelpePrice).toString() : row.baseSelpePrice.toFixed(2)) : '0.00',
@@ -2086,10 +2209,13 @@
                 ]);
             });
             
-            // Add total price (11 columns: 8 empty + merged cell with label and value)
+            // Add total price row with extra field, awans, and total (12 columns)
             const totalValue = order.total ? (currency === 'TMT' ? Math.round(order.total).toString() : order.total.toFixed(2)) : '0.00';
-            const totalText = `ИТОГО (${currencyDisplay}): ${totalValue}`;
-            data.push(['', '', '', '', '', '', '', '', '', totalText, '']);
+            const extraFieldValue = order.extraField || '';
+            const awansValue = order.awans || '';
+            
+            // Structure: 6 empty cells, extra field, empty, awans label+value, total label+value
+            data.push(['', '', '', '', '', '', extraFieldValue, '', `Awans: ${awansValue}`, '', `ИТОГО (${currencyDisplay}): ${totalValue}`, '']);
             
             return data;
         }
@@ -2244,9 +2370,28 @@
                     orderData.rows.push(rowData);
                 });
                 
-                // Add total to order data
-                orderData.total = orderTotal;
+                // Get total from the input field (may have been manually edited)
+                const totalInput = tableContainer.querySelector('.total-price-value');
+                let finalTotal = orderTotal;
+                
+                if (totalInput && totalInput.value) {
+                    // Parse the value from the input, removing currency symbols
+                    const totalStr = totalInput.value.replace(/[$TMT\s]/g, '').trim();
+                    const parsedTotal = parseFloat(totalStr);
+                    if (!isNaN(parsedTotal)) {
+                        finalTotal = parsedTotal;
+                    }
+                }
+                
+                // Get extra field and awans values
+                const extraFieldInput = tableContainer.querySelector('.extra-field');
+                const awansInput = tableContainer.querySelector('.awans-value');
+                
+                // Add total and additional fields to order data
+                orderData.total = finalTotal;
                 orderData.currency = currency;
+                orderData.extraField = extraFieldInput ? extraFieldInput.value : '';
+                orderData.awans = awansInput ? awansInput.value : '';
                 
                 data.orders.push(orderData);
             });

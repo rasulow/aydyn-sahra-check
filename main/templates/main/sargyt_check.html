@@ -47,6 +47,7 @@
                         <th>Bellik</th>
                         <th>m²</th>
                         <th class="price-header">Price</th>
+                        <th>Jemi</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -80,6 +81,7 @@
                         <td><input type="text" class="table-input" placeholder="Примечание"></td>
                         <td class="meter-square">0.00</td>
                         <td class="row-price">0.00</td>
+                        <td><input type="text" class="table-input jemi-input" placeholder="0.00"></td>
                         <td>
                             <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
                         </td>
@@ -102,6 +104,10 @@
                 <button class="add-row-btn" id="add-row-btn" onclick="addNewRow()">
                     <span class="btn-icon">+</span>
                     <span class="btn-text">Добавить строку</span>
+                </button>
+                <button class="add-row-btn" id="add-weranda-btn" onclick="addWerandaRow()">
+                    <span class="btn-icon">+</span>
+                    <span class="btn-text">Добавить веранду</span>
                 </button>
                 <button class="add-table-btn" id="add-table-btn" onclick="addNewTable()">
                     <span class="btn-icon">+</span>
@@ -547,6 +553,16 @@
                 }
             }
             
+            // Update Jemi input with calculated price
+            const jemiInput = row.querySelector('.jemi-input');
+            if (jemiInput) {
+                if (currency === 'USD') {
+                    jemiInput.value = totalPrice.toFixed(2);
+                } else {
+                    jemiInput.value = Math.round(totalPrice).toString();
+                }
+            }
+            
             return totalPrice;
         }
         
@@ -561,10 +577,17 @@
             const clientType = getClientTypeForTable(tableContainer);
             const currency = getCurrencyForTable(tableContainer);
             
-            // Calculate total from all rows
+            // Calculate total from all rows using Jemi values
             rows.forEach(row => {
-                const price = calculateRowPrice(row, clientType);
-                total += price;
+                // First calculate the row price to update the Jemi field
+                calculateRowPrice(row, clientType);
+                
+                // Then use the Jemi value for the total
+                const jemiInput = row.querySelector('.jemi-input');
+                if (jemiInput && jemiInput.value) {
+                    const jemiValue = parseFloat(jemiInput.value.replace(/[$TMT\s]/g, '').trim()) || 0;
+                    total += jemiValue;
+                }
             });
             
             // Update the display
@@ -599,6 +622,7 @@
             const kodRenkInput = row.querySelector('.kodrenk-search');
             const karnizSelect = row.querySelector('.karniz-select');
             const selpeSelect = row.querySelector('.selpe-select');
+            const jemiInput = row.querySelector('.jemi-input');
             
             const tableContainer = row.closest('.table-container');
             
@@ -627,6 +651,13 @@
             // Add change listener for selpe select
             if (selpeSelect) {
                 selpeSelect.addEventListener('change', () => {
+                    updateTableTotals(tableContainer);
+                });
+            }
+            
+            // Add input listener for Jemi field (manual edits)
+            if (jemiInput) {
+                jemiInput.addEventListener('input', () => {
                     updateTableTotals(tableContainer);
                 });
             }
@@ -1094,15 +1125,27 @@
         let isWerandaRow = false;
         let werandaGroupCounter = 0;
 
-        // Function to add new row - opens modal
+        // Function to add new row - directly adds a regular row
         function addNewRow() {
+            isWerandaRow = false;
+            currentWerandaType = null;
+            actuallyAddNewRow();
+        }
+        
+        // Function to add new weranda row - opens modal
+        function addWerandaRow() {
             const modal = document.getElementById('weranda-modal');
-            // Reset modal title and question for new row
+            // Reset modal title and question for weranda row
             const modalTitle = modal.querySelector('.modal-title');
             const modalQuestion = modal.querySelector('.modal-question');
-            modalTitle.textContent = 'Добавить строку';
-            modalQuestion.textContent = 'Это Weranda?';
+            modalTitle.textContent = 'Добавить веранду';
+            modalQuestion.textContent = 'Выберите тип веранды';
             modal.removeAttribute('data-context'); // Remove context for row (default behavior)
+            
+            // Show weranda options directly (skip Yes/No)
+            document.getElementById('weranda-options').style.display = 'block';
+            document.querySelector('.modal-buttons').style.display = 'none';
+            
             modal.classList.add('show');
         }
 
@@ -1151,7 +1194,7 @@
             currentWerandaType = werandaTypeSelect.value;
             
             if (!currentWerandaType) {
-                alert('Пожалуйста, выберите тип Weranda');
+                alert('Пожалуйста, выберите тип веранды');
                 return;
             }
             
@@ -1182,7 +1225,7 @@
             // Reset modal title and question to default
             const modalTitle = modal.querySelector('.modal-title');
             const modalQuestion = modal.querySelector('.modal-question');
-            modalTitle.textContent = 'Добавить строку';
+            modalTitle.textContent = 'Добавить заказ';
             modalQuestion.textContent = 'Это Weranda?';
             document.getElementById('weranda-type-select').selectedIndex = 0;
         }
@@ -1308,6 +1351,7 @@
                 <td><input type="text" class="table-input" placeholder="Примечание"></td>
                 <td class="meter-square">0.00</td>
                 <td class="row-price">0.00</td>
+                <td><input type="text" class="table-input jemi-input" placeholder="0.00"></td>
                 <td>
                     <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
                 </td>
@@ -1709,10 +1753,13 @@
                         
                         // Skip wallet update for "dine mata" orders
                         if (width > 0 && height > 0 && karnizValue !== 'mata') {
+                            const realArea = width * height;
                             orderItems.push({
                                 width: width,
                                 height: height,
-                                quantity: quantity
+                                quantity: quantity,
+                                real_area: realArea, // Send real area for wallet calculation
+                                use_real_area: realArea < 1 // Flag to use real area even if < 1
                             });
                         }
                     });
@@ -1758,7 +1805,7 @@
                 // Create worksheet from combined data
                 const ws = XLSX.utils.aoa_to_sheet(allOrdersData);
                 
-                // Set column widths (12 columns now)
+                // Set column widths (13 columns now)
                 ws['!cols'] = [
                     {wch: 6},  // №
                     {wch: 8},  // Ini
@@ -1771,7 +1818,8 @@
                     {wch: 8},  // m²
                     {wch: 14}, // m² Price (USD or TMT)
                     {wch: 12}, // Selpe baha
-                    {wch: 14}  // Total Price (USD or TMT)
+                    {wch: 14}, // Total Price (USD or TMT)
+                    {wch: 12}  // Jemi
                 ];
                 
                 // Set page breaks
@@ -1912,7 +1960,7 @@
                 
                 // Style combined title and user info row
                 // Row structure: ЗАКАЗ №X (0-1) | User: (2) | Name (3-4) | Region: (5) | Region value (6)
-                for (let col = 0; col < 12; col++) {
+                for (let col = 0; col < 13; col++) {
                     const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
                     if (ws[cellRef]) {
                         ws[cellRef].s = {
@@ -2018,9 +2066,9 @@
                 
                 currentRow += dataRowCount;
                 
-                // Style total row (only 1 total row now, 12 columns)
+                // Style total row (only 1 total row now, 13 columns)
                 // Columns 10-11 are merged for total
-                for (let col = 0; col <= 11; col++) {
+                for (let col = 0; col <= 12; col++) {
                     const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
                     // Create cell if it doesn't exist
                     if (!ws[cellRef]) {
@@ -2188,10 +2236,10 @@
             const currency = userData && userData.currency ? userData.currency : 'USD';
             const currencyDisplay = currency === 'USD' ? '$' : currency;
             
-            // Add table headers (12 columns now - added Ostatok after Bellik)
-            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'Ostatok', 'm²', `m² Price (${currencyDisplay})`, 'Selpe baha', `Total Price (${currencyDisplay})`]);
+            // Add table headers (13 columns now - added Ostatok after Bellik and Jemi after Total Price)
+            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'Ostatok', 'm²', `m² Price (${currencyDisplay})`, 'Selpe baha', `Total Price (${currencyDisplay})`, 'Jemi']);
             
-            // Add rows (ensure all have 12 columns)
+            // Add rows (ensure all have 13 columns)
             order.rows.forEach(row => {
                 data.push([
                     row.number || '',
@@ -2205,17 +2253,18 @@
                     row.meterSquare || '0.00',
                     row.kodRenkPrice ? (currency === 'TMT' ? Math.round(row.kodRenkPrice).toString() : row.kodRenkPrice.toFixed(2)) : '0.00',
                     row.baseSelpePrice ? (currency === 'TMT' ? Math.round(row.baseSelpePrice).toString() : row.baseSelpePrice.toFixed(2)) : '0.00',
-                    row.price ? (currency === 'TMT' ? Math.round(row.price).toString() : row.price.toFixed(2)) : '0.00'
+                    row.price ? (currency === 'TMT' ? Math.round(row.price).toString() : row.price.toFixed(2)) : '0.00',
+                    row.jemiPrice ? (currency === 'TMT' ? Math.round(row.jemiPrice).toString() : row.jemiPrice.toFixed(2)) : '0.00'
                 ]);
             });
             
-            // Add total price row with extra field, awans, and total (12 columns)
+            // Add total price row with extra field, awans, and total (13 columns)
             const totalValue = order.total ? (currency === 'TMT' ? Math.round(order.total).toString() : order.total.toFixed(2)) : '0.00';
             const extraFieldValue = order.extraField || '';
             const awansValue = order.awans || '';
             
-            // Structure: 6 empty cells, extra field, empty, awans label+value, total label+value
-            data.push(['', '', '', '', '', '', extraFieldValue, '', `Awans: ${awansValue}`, '', `ИТОГО (${currencyDisplay}): ${totalValue}`, '']);
+            // Structure: 6 empty cells, extra field, empty, awans label+value, total label+value, empty
+            data.push(['', '', '', '', '', '', extraFieldValue, '', `Awans: ${awansValue}`, '', `ИТОГО (${currencyDisplay}): ${totalValue}`, '', '']);
             
             return data;
         }
@@ -2258,6 +2307,7 @@
                     const karnizSelect = row.querySelector('.karniz-select');
                     const categorySelect = row.querySelector('.category-select');
                     const selpeSelect = row.querySelector('.selpe-select');
+                    const jemiInput = row.querySelector('.jemi-input');
                     
                     const ini = parseFloat(iniInput.value) || 0;
                     const boyy = parseFloat(boyyInput.value) || 0;
@@ -2345,7 +2395,17 @@
                     }
                     
                     const rowPrice = areaPrice + selpePrice;
-                    orderTotal += rowPrice;
+                    
+                    // Use Jemi value if available, otherwise use calculated price
+                    let finalRowPrice = rowPrice;
+                    if (jemiInput && jemiInput.value) {
+                        const jemiValue = parseFloat(jemiInput.value.replace(/[$TMT\s]/g, '').trim());
+                        if (!isNaN(jemiValue)) {
+                            finalRowPrice = jemiValue;
+                        }
+                    }
+                    
+                    orderTotal += finalRowPrice;
                     
                     const rowData = {
                         number: row.querySelector('.row-number').textContent,
@@ -2362,6 +2422,7 @@
                         selpePrice: selpePrice, // Total selpe price (for calculation)
                         baseSelpePrice: baseSelpePrice, // Base selpe price (for Excel export)
                         price: rowPrice,
+                        jemiPrice: finalRowPrice, // Jemi value (editable)
                         isWeranda: row.getAttribute('data-weranda') === 'true',
                         werandaType: row.getAttribute('data-weranda-type') || '',
                         werandaLabel: row.getAttribute('data-weranda-label') || ''

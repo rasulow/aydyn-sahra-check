@@ -703,14 +703,15 @@
             
             userDataDisplay.innerHTML = `
                 <div class="user-data-row">
-                    <span class="user-data-label">User:</span>
+                    <span class="user-data-label">👤 User:</span>
                     <div class="user-select-container" style="position: relative; flex: 1;">
-                        <input type="text" class="user-search-input" 
-                               value="${userData.user.name}" 
-                               placeholder="Search user..."
-                               style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
-                               data-table-number="${tableNumber}">
-                        <div class="user-search-dropdown" 
+                        <input type="text" class="user-search-input"
+                               value="${userData.user.name}"
+                               placeholder="Click to change user..."
+                               style="width: 100%; padding: 8px; border: 1px solid #007bff; border-radius: 4px; font-size: 14px; cursor: pointer; background-color: #f8f9ff; transition: all 0.2s ease;"
+                               data-table-number="${tableNumber}"
+                               readonly>
+                        <div class="user-search-dropdown"
                              style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; margin-top: 2px;">
                         </div>
                     </div>
@@ -733,23 +734,61 @@
         function setupUserSearch(tableContainer, tableNumber) {
             const searchInput = tableContainer.querySelector('.user-search-input');
             const dropdown = tableContainer.querySelector('.user-search-dropdown');
-            
+
             if (!searchInput || !dropdown) return;
-            
-            // Show dropdown on focus
-            searchInput.addEventListener('focus', function() {
-                filterAndShowUsers(searchInput.value, dropdown, tableContainer, tableNumber);
+
+            // Make input editable on click and show dropdown
+            searchInput.addEventListener('click', function() {
+                this.removeAttribute('readonly');
+                this.style.backgroundColor = 'white';
+                this.style.borderColor = '#0056b3';
+                this.style.boxShadow = '0 0 0 2px rgba(0, 123, 255, 0.25)';
+                this.select(); // Select all text for easy replacement
+                filterAndShowUsers('', dropdown, tableContainer, tableNumber);
                 dropdown.style.display = 'block';
             });
-            
+
+            // Add hover effect
+            searchInput.addEventListener('mouseenter', function() {
+                if (this.hasAttribute('readonly')) {
+                    this.style.backgroundColor = '#e6f3ff';
+                    this.style.borderColor = '#0056b3';
+                }
+            });
+
+            searchInput.addEventListener('mouseleave', function() {
+                if (this.hasAttribute('readonly')) {
+                    this.style.backgroundColor = '#f8f9ff';
+                    this.style.borderColor = '#007bff';
+                }
+            });
+
             // Filter on input
             searchInput.addEventListener('input', function() {
                 filterAndShowUsers(searchInput.value, dropdown, tableContainer, tableNumber);
             });
-            
+
+            // Handle blur to make readonly again when not focused
+            searchInput.addEventListener('blur', function() {
+                // Delay to allow click on dropdown items
+                setTimeout(() => {
+                    if (!dropdown.matches(':hover')) {
+                        this.setAttribute('readonly', 'true');
+                        this.style.backgroundColor = '#f8f9ff';
+                        this.style.borderColor = '#007bff';
+                        this.style.boxShadow = 'none';
+                        dropdown.style.display = 'none';
+                    }
+                }, 150);
+            });
+
             // Hide dropdown when clicking outside
             document.addEventListener('click', function(e) {
                 if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    searchInput.setAttribute('readonly', 'true');
+                    searchInput.style.backgroundColor = '#f8f9ff';
+                    searchInput.style.borderColor = '#007bff';
+                    searchInput.style.boxShadow = 'none';
                     dropdown.style.display = 'none';
                 }
             });
@@ -757,16 +796,19 @@
         
         // Filter and show users in table dropdown
         function filterAndShowUsers(searchTerm, dropdown, tableContainer, tableNumber) {
-            const filtered = users.filter(user => 
+            const filtered = users.filter(user =>
                 user.name.toLowerCase().includes(searchTerm.toLowerCase())
             );
-            
+
             dropdown.innerHTML = '';
-            
+
             if (filtered.length === 0) {
                 dropdown.innerHTML = '<div style="padding: 10px; color: #999;">Пользователи не найдены</div>';
             } else {
-                filtered.forEach(user => {
+                // Show only first 10 results for better UX
+                const displayUsers = filtered.slice(0, 10);
+
+                displayUsers.forEach(user => {
                     const item = document.createElement('div');
                     item.className = 'user-dropdown-item';
                     item.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;';
@@ -774,7 +816,7 @@
                         <div style="font-weight: 500;">${user.name}</div>
                         <div style="font-size: 12px; color: #666;">${user.region || ''}</div>
                     `;
-                    
+
                     // Hover effect
                     item.addEventListener('mouseenter', function() {
                         this.style.backgroundColor = '#f0f0f0';
@@ -782,15 +824,30 @@
                     item.addEventListener('mouseleave', function() {
                         this.style.backgroundColor = 'white';
                     });
-                    
+
                     // On click, select user
                     item.addEventListener('click', function() {
                         selectUserForTable(user, tableContainer, tableNumber);
+                        const searchInput = tableContainer.querySelector('.user-search-input');
+                        if (searchInput) {
+                            searchInput.setAttribute('readonly', 'true');
+                            searchInput.style.backgroundColor = '#f8f9ff';
+                            searchInput.style.borderColor = '#007bff';
+                            searchInput.style.boxShadow = 'none';
+                        }
                         dropdown.style.display = 'none';
                     });
-                    
+
                     dropdown.appendChild(item);
                 });
+
+                // Show count if there are more results
+                if (filtered.length > 10) {
+                    const moreItem = document.createElement('div');
+                    moreItem.style.cssText = 'padding: 8px; color: #666; font-size: 12px; text-align: center; border-top: 1px solid #eee;';
+                    moreItem.textContent = `И ещё ${filtered.length - 10} пользователей...`;
+                    dropdown.appendChild(moreItem);
+                }
             }
         }
         

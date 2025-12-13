@@ -553,9 +553,9 @@
                 }
             }
             
-            // Update Jemi input with calculated price
+            // Update Jemi input with calculated price (only if not manually edited)
             const jemiInput = row.querySelector('.jemi-input');
-            if (jemiInput) {
+            if (jemiInput && jemiInput.getAttribute('data-manual-edit') !== 'true') {
                 if (currency === 'USD') {
                     jemiInput.value = totalPrice.toFixed(2);
                 } else {
@@ -630,6 +630,10 @@
             [iniInput, boyyInput, kodRenkInput].forEach(input => {
                 if (input) {
                     input.addEventListener('input', () => {
+                        // Clear manual edit flag when other fields change
+                        if (jemiInput) {
+                            jemiInput.removeAttribute('data-manual-edit');
+                        }
                         updateTableTotals(tableContainer);
                     });
                     // Also listen for blur events for kodRenkInput
@@ -644,6 +648,10 @@
             // Add change listener for karniz select
             if (karnizSelect) {
                 karnizSelect.addEventListener('change', () => {
+                    // Clear manual edit flag when karniz changes
+                    if (jemiInput) {
+                        jemiInput.removeAttribute('data-manual-edit');
+                    }
                     updateTableTotals(tableContainer);
                 });
             }
@@ -651,6 +659,10 @@
             // Add change listener for selpe select
             if (selpeSelect) {
                 selpeSelect.addEventListener('change', () => {
+                    // Clear manual edit flag when selpe changes
+                    if (jemiInput) {
+                        jemiInput.removeAttribute('data-manual-edit');
+                    }
                     updateTableTotals(tableContainer);
                 });
             }
@@ -658,6 +670,8 @@
             // Add input listener for Jemi field (manual edits)
             if (jemiInput) {
                 jemiInput.addEventListener('input', () => {
+                    // Mark as manually edited
+                    jemiInput.setAttribute('data-manual-edit', 'true');
                     updateTableTotals(tableContainer);
                 });
             }
@@ -1805,7 +1819,7 @@
                 // Create worksheet from combined data
                 const ws = XLSX.utils.aoa_to_sheet(allOrdersData);
                 
-                // Set column widths (13 columns now)
+                // Set column widths (12 columns now)
                 ws['!cols'] = [
                     {wch: 6},  // №
                     {wch: 8},  // Ini
@@ -1818,8 +1832,7 @@
                     {wch: 8},  // m²
                     {wch: 14}, // m² Price (USD or TMT)
                     {wch: 12}, // Selpe baha
-                    {wch: 14}, // Total Price (USD or TMT)
-                    {wch: 12}  // Jemi
+                    {wch: 14}  // Total Price (USD or TMT)
                 ];
                 
                 // Set page breaks
@@ -1845,7 +1858,7 @@
                     });
                     
                     // Merge user name cells (columns 3-4) if user data exists
-                    // Row structure: ЗАКАЗ №X (0-1) | User: (2) | Name (3-4) | Region: (5) | Region value (6)
+                    // Row structure: ЗАКАЗ №X (0-1) | User: (2) | Name (3-4) | Region: (5) | Region value (6) | Date: (7) | Date value (8)
                     if (userData) {
                         ws['!merges'].push({
                             s: { r: rowOffset, c: 3 },
@@ -1959,20 +1972,20 @@
                 let headerRowIndex = currentRow;
                 
                 // Style combined title and user info row
-                // Row structure: ЗАКАЗ №X (0-1) | User: (2) | Name (3-4) | Region: (5) | Region value (6)
-                for (let col = 0; col < 13; col++) {
+                // Row structure: ЗАКАЗ №X (0-1) | User: (2) | Name (3-4) | Region: (5) | Region value (6) | Date: (7) | Date value (8)
+                for (let col = 0; col < 12; col++) {
                     const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
                     if (ws[cellRef]) {
                         ws[cellRef].s = {
                             font: {
                                 name: 'Calibri',
                                 sz: 11,
-                                bold: col === 0 || col === 2 || col === 5, // Bold for "ЗАКАЗ", "User:" and "Region:" labels
+                                bold: col === 0 || col === 2 || col === 5 || col === 7, // Bold for "ЗАКАЗ", "User:", "Region:" and "Date:" labels
                                 color: { rgb: '2C3E50' }
                             },
                             alignment: {
                                 vertical: 'center',
-                                horizontal: (col === 2 || col === 5) ? 'right' : 'left' // All left except User: and Region: labels
+                                horizontal: (col === 2 || col === 5 || col === 7) ? 'right' : 'left' // All left except User:, Region: and Date: labels
                             }
                         };
                     }
@@ -2066,9 +2079,9 @@
                 
                 currentRow += dataRowCount;
                 
-                // Style total row (only 1 total row now, 13 columns)
+                // Style total row (only 1 total row now, 12 columns)
                 // Columns 10-11 are merged for total
-                for (let col = 0; col <= 12; col++) {
+                for (let col = 0; col <= 11; col++) {
                     const cellRef = XLSX.utils.encode_cell({r: currentRow, c: col});
                     // Create cell if it doesn't exist
                     if (!ws[cellRef]) {
@@ -2224,10 +2237,18 @@
             const data = [];
             
             // Add header info on one line with order number
-            // Structure: ЗАКАЗ №X (0-1 merged) | User: (2) | Name (3-4 merged) | Region: (5) | Region value (6)
+            // Structure: ЗАКАЗ №X (0-1 merged) | User: (2) | Name (3-4 merged) | Region: (5) | Region value (6) | Date: (7) | Date value (8)
             const userData = currentTableUserData[order.orderNumber];
+            
+            // Get current date in dd.mm.YYYY format
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            const currentDate = `${day}.${month}.${year}`;
+            
             if (userData) {
-                data.push([`ЗАКАЗ №${order.orderNumber}`, '', 'User:', userData.user.name, '', 'Region:', userData.region]);
+                data.push([`ЗАКАЗ №${order.orderNumber}`, '', 'User:', userData.user.name, '', 'Region:', userData.region, 'Date:', currentDate]);
             } else {
                 data.push([`ЗАКАЗ №${order.orderNumber}`]);
             }
@@ -2236,10 +2257,10 @@
             const currency = userData && userData.currency ? userData.currency : 'USD';
             const currencyDisplay = currency === 'USD' ? '$' : currency;
             
-            // Add table headers (13 columns now - added Ostatok after Bellik and Jemi after Total Price)
-            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'Ostatok', 'm²', `m² Price (${currencyDisplay})`, 'Selpe baha', `Total Price (${currencyDisplay})`, 'Jemi']);
+            // Add table headers (12 columns now - added Ostatok after Bellik)
+            data.push(['№', 'Ini', 'Boyy', 'Karniz', 'Kod Renk', 'Selpe', 'Bellik', 'Ostatok', 'm²', `m² baha (${currencyDisplay})`, 'Selpe baha', `Jemi (${currencyDisplay})`]);
             
-            // Add rows (ensure all have 13 columns)
+            // Add rows (ensure all have 12 columns)
             order.rows.forEach(row => {
                 data.push([
                     row.number || '',
@@ -2253,18 +2274,17 @@
                     row.meterSquare || '0.00',
                     row.kodRenkPrice ? (currency === 'TMT' ? Math.round(row.kodRenkPrice).toString() : row.kodRenkPrice.toFixed(2)) : '0.00',
                     row.baseSelpePrice ? (currency === 'TMT' ? Math.round(row.baseSelpePrice).toString() : row.baseSelpePrice.toFixed(2)) : '0.00',
-                    row.price ? (currency === 'TMT' ? Math.round(row.price).toString() : row.price.toFixed(2)) : '0.00',
                     row.jemiPrice ? (currency === 'TMT' ? Math.round(row.jemiPrice).toString() : row.jemiPrice.toFixed(2)) : '0.00'
                 ]);
             });
             
-            // Add total price row with extra field, awans, and total (13 columns)
+            // Add total price row with extra field, awans, and total (12 columns)
             const totalValue = order.total ? (currency === 'TMT' ? Math.round(order.total).toString() : order.total.toFixed(2)) : '0.00';
             const extraFieldValue = order.extraField || '';
             const awansValue = order.awans || '';
             
             // Structure: 6 empty cells, extra field, empty, awans label+value, total label+value, empty
-            data.push(['', '', '', '', '', '', extraFieldValue, '', `Awans: ${awansValue}`, '', `ИТОГО (${currencyDisplay}): ${totalValue}`, '', '']);
+            data.push(['', '', '', '', '', '', extraFieldValue, '', `Awans: ${awansValue}`, '', `ИТОГО (${currencyDisplay}): ${totalValue}`, '']);
             
             return data;
         }

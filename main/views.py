@@ -191,28 +191,35 @@ def update_wallet(request):
         
         # Calculate total area from order items
         total_area = Decimal('0.0')
+        region_area = Decimal('0.0')
         for item in order_items:
             try:
                 width = Decimal(str(item.get('width', 0)))
                 height = Decimal(str(item.get('height', 0)))
                 quantity = Decimal(str(item.get('quantity', 1)))
+                # Use real area sent from frontend for region tracking
+                real_area = Decimal(str(item.get('real_area', width * height)))
+
                 # If height*width < 1, set meter square to 1
                 area_per_item = width * height
                 if area_per_item < Decimal('1.0'):
                     area_per_item = Decimal('1.0')
                 total_area += area_per_item * quantity
+
+                # For region meter square, use the real calculated area without quantity multiplication
+                region_area += real_area
             except (TypeError, ValueError, Decimal.InvalidOperation):
                 continue
-        
+
         # Update client's wallet (add total_area)
         if total_area > 0:
             wallet_increase = total_area
             client.wallet += wallet_increase
             client.save()
 
-            # Update region's total meter square
+            # Update region's total meter square with real area (not multiplied by quantity)
             region = client.region
-            region.total_meter_square += total_area
+            region.total_meter_square += region_area
             region.save()
 
             return JsonResponse({
@@ -221,6 +228,7 @@ def update_wallet(request):
                 'total_area': str(total_area),
                 'wallet_increase': str(wallet_increase),
                 'new_wallet_balance': str(client.wallet),
+                'region_area_added': str(region_area),
                 'region_total_meter_square': str(region.total_meter_square)
             })
         

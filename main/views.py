@@ -204,18 +204,24 @@ def update_wallet(request):
             except (TypeError, ValueError, Decimal.InvalidOperation):
                 continue
         
-        # Update client's wallet (add 3 * total_area)
+        # Update client's wallet (add total_area)
         if total_area > 0:
             wallet_increase = total_area
             client.wallet += wallet_increase
             client.save()
-            
+
+            # Update region's total meter square
+            region = client.region
+            region.total_meter_square += total_area
+            region.save()
+
             return JsonResponse({
                 'success': True,
                 'client_id': client.id,
                 'total_area': str(total_area),
                 'wallet_increase': str(wallet_increase),
-                'new_wallet_balance': str(client.wallet)
+                'new_wallet_balance': str(client.wallet),
+                'region_total_meter_square': str(region.total_meter_square)
             })
         
         return JsonResponse({

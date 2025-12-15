@@ -6,26 +6,29 @@ from .models import Region, Client, Color, ClientType, Category, Check, Karniz, 
 
 @admin.register(Region)
 class RegionAdmin(unfold_admin.ModelAdmin):
-    list_display = ('id', 'name', 'formatted_created_at', 'formatted_updated_at')
+    list_display = ('id', 'name', 'total_meter_square', 'formatted_created_at', 'formatted_updated_at')
     list_display_links = ('id', 'name')
     search_fields = ('name',)
     list_filter = ('created_at', 'updated_at')
     ordering = ('name',)
-    readonly_fields = ('formatted_created_at', 'formatted_updated_at')
-    
+    readonly_fields = ('total_meter_square', 'formatted_created_at', 'formatted_updated_at')
+
     def formatted_created_at(self, obj):
         return obj.created_at.strftime('%d.%m.%Y')
     formatted_created_at.short_description = 'Создан'
     formatted_created_at.admin_order_field = 'created_at'
-    
+
     def formatted_updated_at(self, obj):
         return obj.updated_at.strftime('%d.%m.%Y')
     formatted_updated_at.short_description = 'Обновлен'
     formatted_updated_at.admin_order_field = 'updated_at'
-    
+
     fieldsets = (
         ('Основная информация', {
             'fields': ('name',)
+        }),
+        ('Статистика региона', {
+            'fields': ('total_meter_square',)
         }),
     )
 

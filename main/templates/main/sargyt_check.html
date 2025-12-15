@@ -105,6 +105,10 @@
                     <span class="btn-icon">+</span>
                     <span class="btn-text">Добавить строку</span>
                 </button>
+                <button class="add-row-btn" id="add-empty-row-btn" onclick="addEmptyRow()">
+                    <span class="btn-icon">+</span>
+                    <span class="btn-text">Добавить пустую</span>
+                </button>
                 <button class="add-row-btn" id="add-weranda-btn" onclick="addWerandaRow()">
                     <span class="btn-icon">+</span>
                     <span class="btn-text">Добавить веранду</span>
@@ -439,9 +443,9 @@
             const categorySelect = row.querySelector('.category-select');
             const selpeSelect = row.querySelector('.selpe-select');
             
-            const ini = parseFloat(iniInput.value) || 0;
-            const boyy = parseFloat(boyyInput.value) || 0;
-            const kodRenkCode = kodRenkInput.value.trim();
+            const ini = parseFloat(iniInput?.value) || 0;
+            const boyy = parseFloat(boyyInput?.value) || 0;
+            const kodRenkCode = kodRenkInput?.value?.trim() || '';
             const karnizValue = karnizSelect ? karnizSelect.value : '';
             const categoryId = categorySelect ? parseInt(categorySelect.value) : null;
             const selpeId = selpeSelect ? parseInt(selpeSelect.value) : null;
@@ -578,11 +582,16 @@
             
             // Calculate total from all rows using Jemi values
             rows.forEach(row => {
-                // First calculate the row price to update the Jemi field
-                calculateRowPrice(row, clientType);
-                
-                // Then use the Jemi value for the total
                 const jemiInput = row.querySelector('.jemi-input');
+                const isManualEdit = jemiInput && jemiInput.hasAttribute('data-manual-edit');
+                const isEmptyRow = !row.querySelector('.karniz-select'); // Empty rows don't have karniz dropdown
+
+                // Only calculate row price for regular rows that haven't been manually edited
+                if (!isManualEdit && !isEmptyRow) {
+                    calculateRowPrice(row, clientType);
+                }
+
+                // Use the Jemi value for the total (whether calculated or manually entered)
                 if (jemiInput && jemiInput.value) {
                     const jemiValue = parseFloat(jemiInput.value.replace(/[$TMT\s]/g, '').trim()) || 0;
                     total += jemiValue;
@@ -674,6 +683,27 @@
                     updateTableTotals(tableContainer);
                 });
             }
+
+            // Add listeners for empty row inputs (when dropdowns are replaced with text inputs)
+            const emptyRowInputs = [
+                row.querySelector('td:nth-child(4) input'), // Карниз
+                row.querySelector('td:nth-child(5) input'), // Категория
+                row.querySelector('td:nth-child(6) input'), // Код/Цвет
+                row.querySelector('td:nth-child(7) input'), // Шелп
+                row.querySelector('td:nth-child(8) input')  // Примечание
+            ];
+
+            emptyRowInputs.forEach(input => {
+                if (input && input !== jemiInput) { // Skip jemi input as it's handled above
+                    input.addEventListener('input', () => {
+                        // Clear manual edit flag when other fields change
+                        if (jemiInput) {
+                            jemiInput.removeAttribute('data-manual-edit');
+                        }
+                        updateTableTotals(tableContainer);
+                    });
+                }
+            });
         }
         
         // Initialize calculation listeners for all existing rows
@@ -1032,7 +1062,60 @@
             currentWerandaType = null;
             actuallyAddNewRow();
         }
-        
+
+        // Function to add new empty row with only inputable fields
+        function addEmptyRow() {
+            // Find the table container that contains the clicked button
+            const allTableContainers = document.querySelectorAll('.table-container');
+            const lastTableContainer = allTableContainers[allTableContainers.length - 1];
+            const tableBody = lastTableContainer.querySelector('[id^="table-body"]');
+
+            // Get the highest row number used so far
+            const currentRows = tableBody.querySelectorAll('.table-row');
+            let maxRowNumber = 0;
+
+            currentRows.forEach(row => {
+                const rowNum = parseInt(row.getAttribute('data-row-number'));
+                if (rowNum > maxRowNumber) {
+                    maxRowNumber = rowNum;
+                }
+            });
+
+            const newRowNumber = maxRowNumber + 1;
+
+            // Create empty row HTML with only inputable fields
+            const newRow = document.createElement('tr');
+            newRow.className = 'table-row';
+            newRow.setAttribute('data-row-number', newRowNumber);
+
+            newRow.innerHTML = `
+                <td class="row-number">${newRowNumber}</td>
+                <td><input type="number" class="table-input" step="0.01" placeholder="0.00"></td>
+                <td><input type="number" class="table-input" step="0.01" placeholder="0.00"></td>
+                <td><input type="text" class="table-input" placeholder="Карниз"></td>
+                <td><input type="text" class="table-input" placeholder="Категория"></td>
+                <td><input type="text" class="table-input" placeholder="Код/Цвет"></td>
+                <td><input type="text" class="table-input" placeholder="Шелп"></td>
+                <td><input type="text" class="table-input" placeholder="Примечание"></td>
+                <td class="meter-square">0.00</td>
+                <td class="row-price">0.00</td>
+                <td><input type="text" class="table-input jemi-input" placeholder="0.00"></td>
+                <td>
+                    <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
+                </td>
+            `;
+
+            tableBody.appendChild(newRow);
+
+            // Setup calculation listeners for the empty row
+            setupRowCalculationListeners(newRow);
+
+            console.log('Добавлена пустая строка #' + newRowNumber);
+
+            // Update totals after adding the row
+            updateTableTotals(lastTableContainer);
+        }
+
         // Function to add new weranda row - opens modal
         function addWerandaRow() {
             const modal = document.getElementById('weranda-modal');
@@ -2220,9 +2303,9 @@
                     const selpeSelect = row.querySelector('.selpe-select');
                     const jemiInput = row.querySelector('.jemi-input');
                     
-                    const ini = parseFloat(iniInput.value) || 0;
-                    const boyy = parseFloat(boyyInput.value) || 0;
-                    const kodRenkCode = kodRenkInput.value.trim();
+                    const ini = parseFloat(iniInput?.value) || 0;
+                    const boyy = parseFloat(boyyInput?.value) || 0;
+                    const kodRenkCode = kodRenkInput?.value?.trim() || '';
                     const karnizValue = karnizSelect ? karnizSelect.value : '';
                     const categoryId = categorySelect ? parseInt(categorySelect.value) : null;
                     const selpeId = selpeSelect ? parseInt(selpeSelect.value) : null;
@@ -2319,14 +2402,14 @@
                     orderTotal += finalRowPrice;
                     
                     const rowData = {
-                        number: row.querySelector('.row-number').textContent,
-                        en: row.querySelector('td:nth-child(2) input').value,
-                        boy: row.querySelector('td:nth-child(3) input').value,
-                        karniz: row.querySelector('.karniz-select').selectedOptions[0]?.text || '',
-                        category: row.querySelector('.category-select').selectedOptions[0]?.text || '',
-                        kodRenk: row.querySelector('.kodrenk-search').value,
-                        selpe: row.querySelector('.selpe-select').selectedOptions[0]?.text || '',
-                        bellik: row.querySelector('td:nth-child(8) input').value,
+                        number: row.querySelector('.row-number')?.textContent || '',
+                        en: row.querySelector('td:nth-child(2) input')?.value || '',
+                        boy: row.querySelector('td:nth-child(3) input')?.value || '',
+                        karniz: row.querySelector('.karniz-select')?.selectedOptions[0]?.text || '',
+                        category: row.querySelector('.category-select')?.selectedOptions[0]?.text || '',
+                        kodRenk: row.querySelector('.kodrenk-search')?.value || '',
+                        selpe: row.querySelector('.selpe-select')?.selectedOptions[0]?.text || '',
+                        bellik: row.querySelector('td:nth-child(8) input')?.value || '',
                         meterSquare: calculatedArea > 0 ? calculatedArea.toFixed(2) : '0.00',
                         areaPrice: areaPrice,
                         kodRenkPrice: kodRenkPrice, // Base price for Excel export

@@ -11,7 +11,7 @@ class RegionAdmin(unfold_admin.ModelAdmin):
     search_fields = ('name',)
     list_filter = ('created_at', 'updated_at')
     ordering = ('name',)
-    readonly_fields = ('total_meter_square', 'formatted_created_at', 'formatted_updated_at')
+    readonly_fields = ('formatted_created_at', 'formatted_updated_at')
 
     def formatted_created_at(self, obj):
         return obj.created_at.strftime('%d.%m.%Y')

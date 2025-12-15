@@ -16,6 +16,9 @@
         <div class="header">
             <h1>Проверка заказов</h1>
             <p>Проверка и подтверждение данных заказов</p>
+            <div class="row-counter">
+                <span class="row-counter-text">Общее количество строк: <span id="current-rows">0</span>/250</span>
+            </div>
         </div>
 
         <!-- Initial Add Order Button -->
@@ -83,7 +86,8 @@
                         <td class="row-price">0.00</td>
                         <td><input type="text" class="table-input jemi-input" placeholder="0.00"></td>
                         <td>
-                            <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
+                            <button class="copy-row-btn" onclick="copyRow(this)" title="Копировать строку">📋</button>
+                            <button class="remove-row-btn" onclick="removeRow(this)" title="Удалить строку">✕</button>
                         </td>
                     </tr>
                 </tbody>
@@ -277,10 +281,11 @@
             });
         }
         
-        // Initialize dropdowns on page load
+        // Initialize dropdowns and row counter on page load
         document.addEventListener('DOMContentLoaded', function() {
             populateRegionDropdown();
             populateClientTypeDropdown();
+            updateRowCounter();
         });
 
         // Open user data modal
@@ -1058,6 +1063,9 @@
 
         // Function to add new row - directly adds a regular row
         function addNewRow() {
+            if (!validateRowLimit()) {
+                return;
+            }
             isWerandaRow = false;
             currentWerandaType = null;
             actuallyAddNewRow();
@@ -1101,7 +1109,8 @@
                 <td class="row-price">0.00</td>
                 <td><input type="text" class="table-input jemi-input" placeholder="0.00"></td>
                 <td>
-                    <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
+                    <button class="copy-row-btn" onclick="copyRow(this)" title="Копировать строку">📋</button>
+                    <button class="remove-row-btn" onclick="removeRow(this)" title="Удалить строку">✕</button>
                 </td>
             `;
 
@@ -1114,6 +1123,9 @@
 
             // Update totals after adding the row
             updateTableTotals(lastTableContainer);
+
+            // Update row counter
+            updateRowCounter();
         }
 
         // Function to add new weranda row - opens modal
@@ -1172,11 +1184,16 @@
 
         // Confirm Weranda row with type
         function confirmWerandaRow() {
+            if (!validateRowLimit()) {
+                closeWerandaModal();
+                return;
+            }
+
             const modal = document.getElementById('weranda-modal');
             const context = modal.getAttribute('data-context');
             const werandaTypeSelect = document.getElementById('weranda-type-select');
             currentWerandaType = werandaTypeSelect.value;
-            
+
             if (!currentWerandaType) {
                 alert('Пожалуйста, выберите тип веранды');
                 return;
@@ -1337,10 +1354,11 @@
                 <td class="row-price">0.00</td>
                 <td><input type="text" class="table-input jemi-input" placeholder="0.00"></td>
                 <td>
-                    <button class="remove-row-btn" onclick="removeRow(this)">✕</button>
+                    <button class="copy-row-btn" onclick="copyRow(this)" title="Копировать строку">📋</button>
+                    <button class="remove-row-btn" onclick="removeRow(this)" title="Удалить строку">✕</button>
                 </td>
             `;
-            
+
             tableBody.appendChild(newRow);
             
             // Setup kod renk search for new row
@@ -1368,7 +1386,10 @@
             // Update table totals
             const tableContainer = newRow.closest('.table-container');
             updateTableTotals(tableContainer);
-            
+
+            // Update row counter
+            updateRowCounter();
+
             // If it's a weranda row, add visual indicator in Bellik field
             if (isWerandaRow && currentWerandaType) {
                 const bellikInput = newRow.querySelector('td:nth-child(8) input');
@@ -1440,8 +1461,132 @@
             // Update table totals after row removal
             const tableContainer = tableBody.closest('.table-container');
             updateTableTotals(tableContainer);
-            
+
+            // Update row counter
+            updateRowCounter();
+
             console.log('Строка удалена');
+        }
+
+        // Function to count total effective rows across all orders
+        function countTotalEffectiveRows() {
+            const allTableContainers = document.querySelectorAll('.table-container');
+            let totalEffectiveRows = 0;
+
+            allTableContainers.forEach(tableContainer => {
+                const rows = tableContainer.querySelectorAll('.table-row');
+                const processedGroups = new Set();
+
+                rows.forEach(row => {
+                    const werandaGroup = row.getAttribute('data-weranda-group');
+                    const isWeranda = row.getAttribute('data-weranda') === 'true';
+
+                    if (isWeranda && werandaGroup) {
+                        // Count weranda groups only once
+                        if (!processedGroups.has(werandaGroup)) {
+                            processedGroups.add(werandaGroup);
+                            totalEffectiveRows += 1;
+                        }
+                    } else {
+                        // Count regular rows individually
+                        totalEffectiveRows += 1;
+                    }
+                });
+            });
+
+            return totalEffectiveRows;
+        }
+
+        // Function to update row counter display
+        function updateRowCounter() {
+            const totalEffectiveRows = countTotalEffectiveRows();
+            const counterElement = document.getElementById('current-rows');
+            if (counterElement) {
+                counterElement.textContent = totalEffectiveRows;
+                // Add visual warning when approaching limit
+                const counterText = counterElement.closest('.row-counter-text');
+                if (totalEffectiveRows >= 240) {
+                    counterText.style.color = '#ff6b6b';
+                } else if (totalEffectiveRows >= 200) {
+                    counterText.style.color = '#ffa726';
+                } else {
+                    counterText.style.color = 'white';
+                }
+            }
+        }
+
+        // Function to validate row limit before adding
+        function validateRowLimit() {
+            const totalEffectiveRows = countTotalEffectiveRows();
+            if (totalEffectiveRows >= 250) {
+                alert(`Внимание! Общее количество строк во всех заказах составляет ${totalEffectiveRows}, что превышает лимит в 250 строк.`);
+                return false;
+            }
+            return true;
+        }
+
+        // Function to copy row
+        function copyRow(button) {
+            if (!validateRowLimit()) {
+                return;
+            }
+
+            const row = button.closest('.table-row');
+            const tableBody = row.closest('tbody');
+
+            // Clone the row
+            const newRow = row.cloneNode(true);
+
+            // Get the highest row number used so far
+            const currentRows = tableBody.querySelectorAll('.table-row');
+            let maxRowNumber = 0;
+
+            currentRows.forEach(existingRow => {
+                const rowNum = parseInt(existingRow.getAttribute('data-row-number'));
+                if (rowNum > maxRowNumber) {
+                    maxRowNumber = rowNum;
+                }
+            });
+
+            const newRowNumber = maxRowNumber + 1;
+
+            // Update the row number and attributes
+            newRow.setAttribute('data-row-number', newRowNumber);
+            newRow.querySelector('.row-number').textContent = newRowNumber;
+
+            // Clear weranda attributes if they exist
+            newRow.removeAttribute('data-weranda');
+            newRow.removeAttribute('data-weranda-type');
+            newRow.removeAttribute('data-weranda-label');
+            newRow.removeAttribute('data-weranda-group');
+
+            // Remove any weranda styling from the bellik field
+            const bellikInput = newRow.querySelector('td:nth-child(8) input');
+            if (bellikInput && bellikInput.value.includes('Weranda')) {
+                bellikInput.value = '';
+                bellikInput.style.fontWeight = '';
+                bellikInput.style.color = '';
+            }
+
+            // Clear calculation results but keep jemi value
+            newRow.querySelector('.meter-square').textContent = '0.00';
+            newRow.querySelector('.row-price').textContent = '0.00';
+            // Keep the jemi input value from the original row
+
+            // Setup calculation listeners for the copied row
+            setupRowCalculationListeners(newRow);
+
+            // Insert the copied row at the bottom
+            tableBody.appendChild(newRow);
+
+            // Update table totals
+            const tableContainer = tableBody.closest('.table-container');
+            updateTableTotals(tableContainer);
+
+            // Update row counter
+            updateRowCounter();
+
+            console.log('Строка скопирована');
         }
 
         // Function to add new table - opens modal for user data

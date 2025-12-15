@@ -210,7 +210,7 @@ def update_wallet(request):
                 region_area += real_area
             except (TypeError, ValueError, Decimal.InvalidOperation):
                 continue
-
+        
         # Update client's wallet (add total_area)
         if total_area > 0:
             wallet_increase = total_area
@@ -221,7 +221,7 @@ def update_wallet(request):
             region = client.region
             region.total_meter_square += region_area
             region.save()
-
+            
             return JsonResponse({
                 'success': True,
                 'client_id': client.id,

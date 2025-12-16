@@ -200,10 +200,10 @@ def update_wallet(request):
                 # Use real area sent from frontend for region tracking
                 real_area = Decimal(str(item.get('real_area', width * height)))
 
-                # If height*width < 1, set meter square to 1
+                # If height*width < 1, multiply the real area by 3
                 area_per_item = width * height
                 if area_per_item < Decimal('1.0'):
-                    area_per_item = Decimal('1.0')
+                    area_per_item = area_per_item
                 total_area += area_per_item * quantity
 
                 # For region meter square, use the real calculated area without quantity multiplication

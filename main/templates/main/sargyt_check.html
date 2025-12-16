@@ -170,6 +170,24 @@
                         <option value="TMT">TMT</option>
                     </select>
                 </div>
+                
+                <div class="selection-group">
+                    <label for="modal-weranda-select">Это Weranda?</label>
+                    <select id="modal-weranda-select" class="region-select">
+                        <option value="no">Нет</option>
+                        <option value="yes">Да</option>
+                    </select>
+                </div>
+                
+                <div class="selection-group" id="modal-weranda-type-group" style="display: none;">
+                    <label for="modal-weranda-type">Тип Weranda:</label>
+                    <select id="modal-weranda-type" class="region-select">
+                        <option value="">Выберите...</option>
+                        <option value="2-bolek">2 bolek</option>
+                        <option value="3-bolek">3 bolek</option>
+                        <option value="4-bolek">4 bolek</option>
+                    </select>
+                </div>
             </div>
             <div class="modal-action-buttons">
                 <button class="modal-btn modal-btn-confirm" onclick="confirmUserData()">Добавить</button>
@@ -298,12 +316,15 @@
         function closeUserDataModal() {
             const modal = document.getElementById('user-data-modal');
             modal.classList.remove('show');
-            
+
             // Reset modal inputs
             modalUserInput.value = '';
             modalRegionDisplay.value = '';
             modalSelectedUser = null;
             document.getElementById('modal-currency-select').value = 'USD';
+            document.getElementById('modal-weranda-select').value = 'no';
+            document.getElementById('modal-weranda-type').value = '';
+            document.getElementById('modal-weranda-type-group').style.display = 'none';
         }
         
         // Open add user modal (nested modal)
@@ -839,6 +860,19 @@
             }
         });
 
+        // Weranda selection event listener
+        const werandaSelect = document.getElementById('modal-weranda-select');
+        const werandaTypeGroup = document.getElementById('modal-weranda-type-group');
+        
+        werandaSelect.addEventListener('change', function() {
+            if (this.value === 'yes') {
+                werandaTypeGroup.style.display = 'block';
+            } else {
+                werandaTypeGroup.style.display = 'none';
+                document.getElementById('modal-weranda-type').value = '';
+            }
+        });
+
         console.log('Страница проверки заказов загружена');
         console.log('Доступно пользователей:', users.length);
 
@@ -1216,19 +1250,127 @@
         function closeWerandaModal() {
             const modal = document.getElementById('weranda-modal');
             modal.classList.remove('show');
-            
+
             // Reset modal state
             document.getElementById('weranda-options').style.display = 'none';
             document.querySelector('.modal-buttons').style.display = 'flex';
             document.getElementById('weranda-type-select').value = '';
             modal.removeAttribute('data-context');
-            
+
             // Reset modal title and question to default
             const modalTitle = modal.querySelector('.modal-title');
             const modalQuestion = modal.querySelector('.modal-question');
             modalTitle.textContent = 'Добавить заказ';
             modalQuestion.textContent = 'Это Weranda?';
             document.getElementById('weranda-type-select').selectedIndex = 0;
+        }
+
+        // Function to add weranda data to first row when creating new order
+        function addWerandaDataToRow(firstRow, werandaType) {
+            const tableBody = firstRow.parentElement;
+            
+            // Remove the first row
+            firstRow.remove();
+            
+            // Determine how many rows to add based on weranda type
+            let rowCount = 1;
+            let rowLabels = [''];
+            
+            switch(werandaType) {
+                case '2-bolek':
+                    rowCount = 2;
+                    rowLabels = ['2-bolek cep', '2-bolek sag'];
+                    break;
+                case '3-bolek':
+                    rowCount = 3;
+                    rowLabels = ['3-bolek cep', '3-bolek orta', '3-bolek sag'];
+                    break;
+                case '4-bolek':
+                    rowCount = 4;
+                    rowLabels = ['4-bolek cep', '4-bolek cep orta', '4-bolek sag orta', '4-bolek sag'];
+                    break;
+            }
+            
+            // Increment weranda group counter
+            werandaGroupCounter++;
+            const currentGroupId = werandaGroupCounter;
+            
+            // Add rows based on count
+            for (let i = 0; i < rowCount; i++) {
+                const newRow = document.createElement('tr');
+                newRow.className = 'table-row';
+                newRow.setAttribute('data-row-number', 1);
+                newRow.setAttribute('data-weranda', 'true');
+                newRow.setAttribute('data-weranda-type', werandaType);
+                newRow.setAttribute('data-weranda-label', rowLabels[i]);
+                newRow.setAttribute('data-weranda-group', currentGroupId);
+                
+                // Display row number with letter suffix (1a, 1b, 1c, 1d)
+                const letterSuffix = String.fromCharCode(97 + i); // 97 = 'a'
+                const displayNumber = `1${letterSuffix}`;
+                
+                newRow.innerHTML = `
+                    <td class="row-number">${displayNumber}</td>
+                    <td><input type="number" class="table-input" step="0.01" placeholder="0.00"></td>
+                    <td><input type="number" class="table-input" step="0.01" placeholder="0.00"></td>
+                    <td>
+                        <select class="table-select karniz-select">
+                            <option value="">Выберите...</option>
+                            <option value="mata">Dine mata</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select class="table-select category-select">
+                            <option value="">Выберите...</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="searchable-select-wrapper">
+                            <input type="text" class="table-input kodrenk-search" placeholder="Начните вводить..." autocomplete="off">
+                            <div class="kodrenk-dropdown"></div>
+                        </div>
+                    </td>
+                    <td>
+                        <select class="table-select selpe-select">
+                            <option value="">-</option>
+                        </select>
+                    </td>
+                    <td><input type="text" class="table-input" placeholder="Примечание"></td>
+                    <td class="meter-square">0.00</td>
+                    <td class="row-price">0.00</td>
+                    <td><input type="text" class="table-input jemi-input" placeholder="0.00"></td>
+                    <td>
+                        <button class="copy-row-btn" onclick="copyRow(this)" title="Копировать строку">📋</button>
+                        <button class="remove-row-btn" onclick="removeRow(this)" title="Удалить строку">✕</button>
+                    </td>
+                `;
+
+                tableBody.appendChild(newRow);
+                
+                // Setup kod renk search for new row
+                const newKodRenkInput = newRow.querySelector('.kodrenk-search');
+                const newKodRenkDropdown = newRow.querySelector('.kodrenk-dropdown');
+                setupKodRenkSearch(newKodRenkInput, newKodRenkDropdown);
+                
+                // Populate category dropdown for new row and setup listener
+                const newCategorySelect = newRow.querySelector('.category-select');
+                populateCategorySelect(newCategorySelect);
+                setupCategoryChangeListener(newCategorySelect);
+                
+                // Populate karniz dropdown for new row and setup listener
+                const newKarnizSelect = newRow.querySelector('.karniz-select');
+                populateKarnizSelect(newKarnizSelect);
+                setupKarnizChangeListener(newKarnizSelect);
+                
+                // Populate selpe dropdown for new row
+                const newSelpeSelect = newRow.querySelector('.selpe-select');
+                populateSelpeSelect(newSelpeSelect);
+                
+                // Setup calculation listeners for the new row
+                setupRowCalculationListeners(newRow);
+            }
+            
+            console.log(`Добавлено ${rowCount} строк Weranda (${werandaType}) с группой ${currentGroupId}`);
         }
 
         // Actually add the new row
@@ -1421,33 +1563,32 @@
                 const currentRow = rows[i];
                 const isWeranda = currentRow.getAttribute('data-weranda') === 'true';
                 const werandaLabel = currentRow.getAttribute('data-weranda-label');
+                const werandaGroup = currentRow.getAttribute('data-weranda-group');
                 
-                if (isWeranda && werandaLabel) {
+                if (isWeranda && werandaGroup) {
                     // This is a weranda row, find all rows in this group
-                    const werandaType = currentRow.getAttribute('data-weranda-type');
-                    let groupSize = 1;
+                    const groupRows = [];
                     
-                    // Count how many consecutive weranda rows with the same type
-                    while (i + groupSize < rows.length) {
-                        const nextRow = rows[i + groupSize];
-                        if (nextRow.getAttribute('data-weranda') === 'true' && 
-                            nextRow.getAttribute('data-weranda-type') === werandaType &&
-                            nextRow.getAttribute('data-weranda-label')) {
-                            groupSize++;
-                        } else {
+                    // Collect all rows with the same weranda group
+                    for (let j = i; j < rows.length; j++) {
+                        const row = rows[j];
+                        if (row.getAttribute('data-weranda-group') === werandaGroup) {
+                            groupRows.push(row);
+                        } else if (groupRows.length > 0) {
+                            // Found a different group or non-weranda row, stop
                             break;
                         }
                     }
                     
-                    // Assign the same number to all rows in the group
-                    for (let j = 0; j < groupSize; j++) {
-                        const row = rows[i + j];
-                        const label = row.getAttribute('data-weranda-label');
+                    // Assign the same number to all rows in the group with letter suffixes
+                    for (let j = 0; j < groupRows.length; j++) {
+                        const row = groupRows[j];
+                        const letterSuffix = String.fromCharCode(97 + j); // 97 = 'a'
                         row.setAttribute('data-row-number', currentNumber);
-                        row.querySelector('.row-number').textContent = currentNumber + label;
+                        row.querySelector('.row-number').textContent = currentNumber + letterSuffix;
                     }
                     
-                    i += groupSize;
+                    i += groupRows.length;
                 } else {
                     // Regular row
                     currentRow.setAttribute('data-row-number', currentNumber);
@@ -1591,8 +1732,8 @@
 
         // Function to add new table - opens modal for user data
         function addNewTable() {
-            // First ask if it's weranda, then get user data
-            openWerandaModalForNewTable();
+            // Open user data modal directly (which now includes weranda question)
+            openUserDataModalForNewTable();
         }
         
         // Open weranda modal for new table
@@ -1629,10 +1770,21 @@
             modalSelectedCurrency = currencySelect.value;
             console.log('Selected currency from modal:', modalSelectedCurrency);
             
+            // Get weranda selection
+            const werandaSelect = document.getElementById('modal-weranda-select');
+            const isWeranda = werandaSelect.value === 'yes';
+            const werandaType = document.getElementById('modal-weranda-type').value;
+            
+            // Validate weranda type if weranda is selected
+            if (isWeranda && !werandaType) {
+                alert('Пожалуйста, выберите тип Weranda!');
+                return;
+            }
+            
             if (isNewTable) {
                 // Creating a new table
                 modal.removeAttribute('data-new-table');
-                actuallyAddNewTable();
+                actuallyAddNewTable(isWeranda, werandaType);
             } else {
                 // Creating first table
                 const tableNumber = 1;
@@ -1663,13 +1815,20 @@
                 // Update table totals to show correct currency
                 updateTableTotals(firstTable);
                 
+                // If weranda is selected, add weranda row automatically
+                if (isWeranda && werandaType) {
+                    // Get the first row in the table and populate it with weranda data
+                    const firstRow = firstTable.querySelector('.table-row');
+                    addWerandaDataToRow(firstRow, werandaType);
+                }
+                
                 closeUserDataModal();
                 console.log('Первый заказ создан с данными пользователя');
             }
         }
         
         // Actually add new table with user data
-        function actuallyAddNewTable() {
+        function actuallyAddNewTable(isWeranda = false, werandaType = '') {
             const mainContainer = document.querySelector('.container');
             const allTableContainers = document.querySelectorAll('.table-container');
             const lastTableContainer = allTableContainers[allTableContainers.length - 1];
@@ -1703,10 +1862,10 @@
             console.log('Set client ID on new table', newTableNumber, ':', modalSelectedUser.id);
             
             // Store weranda information for the new table
-            if (isWerandaRow && currentWerandaType) {
+            if (isWeranda && werandaType) {
                 newTableContainer.setAttribute('data-weranda', 'true');
-                newTableContainer.setAttribute('data-weranda-type', currentWerandaType);
-                console.log('Set weranda info on new table', newTableNumber, ':', currentWerandaType);
+                newTableContainer.setAttribute('data-weranda-type', werandaType);
+                console.log('Set weranda info on new table', newTableNumber, ':', werandaType);
             } else {
                 newTableContainer.setAttribute('data-weranda', 'false');
             }
@@ -1784,6 +1943,13 @@
             
             // Update table totals to show correct currency
             updateTableTotals(newTableContainer);
+            
+            // If weranda is selected, add weranda row automatically
+            if (isWeranda && werandaType) {
+                // Get the first row in the new table and populate it with weranda data
+                const firstRow = newTableContainer.querySelector('.table-row');
+                addWerandaDataToRow(firstRow, werandaType);
+            }
             
             closeUserDataModal();
             console.log('Добавлена новая таблица: Заказ №' + newTableNumber);
